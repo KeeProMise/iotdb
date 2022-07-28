@@ -20,7 +20,6 @@ package org.apache.iotdb.influxdb.integration;
 
 import org.apache.iotdb.influxdb.IoTDBInfluxDBFactory;
 import org.apache.iotdb.session.Session;
-
 import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBException;
 import org.influxdb.dto.Point;
@@ -47,15 +46,17 @@ public class IoTDBInfluxDBIT {
   private static String password;
   private static InfluxDB influxDB;
 
-  @ClassRule
-  public static GenericContainer<?> iotdb =
-      new GenericContainer(DockerImageName.parse("apache/iotdb:influxdb-protocol-on"))
-          .withExposedPorts(8086);
+//  @ClassRule
+//  public static GenericContainer<?> iotdb =
+//      new GenericContainer(DockerImageName.parse("apache/iotdb:influxdb-protocol-on"))
+//          .withExposedPorts(8086);
 
   @BeforeClass
   public static void setUp() {
-    host = iotdb.getContainerIpAddress();
-    port = iotdb.getMappedPort(8086);
+//    host = iotdb.getContainerIpAddress();
+//    port = iotdb.getMappedPort(8086);
+    host = "127.0.0.1";
+    port = 8086;
     username = "root";
     password = "root";
     influxDB = IoTDBInfluxDBFactory.connect(host, port, username, password);
@@ -188,7 +189,7 @@ public class IoTDBInfluxDBIT {
   public void testFunc() {
     Query query =
         new Query(
-            "select count(score),first(score),last(country),max(score),mean(score),median(score),min(score),mode(score),spread(score),stddev(score),sum(score) from student where (name=\"xie\" and sex=\"m\")or time<now()",
+            "select count(score),first(score),last(country),max(score),mean(score),median(score),min(score),mode(score),spread(score),stddev(score),sum(score) from student where (name=\"xie\" and sex=\"m\")or score<99",
             "database");
     QueryResult result = influxDB.query(query);
     QueryResult.Series series = result.getResults().get(0).getSeries().get(0);
