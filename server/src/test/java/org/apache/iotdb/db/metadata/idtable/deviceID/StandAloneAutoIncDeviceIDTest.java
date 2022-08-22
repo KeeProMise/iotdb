@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.iotdb.db.metadata.idtable.DeviceID;
+package org.apache.iotdb.db.metadata.idtable.deviceID;
 
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.exception.StorageEngineException;
@@ -33,7 +33,7 @@ import java.nio.ByteBuffer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
-public class AutoIncrementDeviceIDTest {
+public class StandAloneAutoIncDeviceIDTest {
 
   private boolean isEnableIDTable = false;
 
@@ -66,11 +66,11 @@ public class AutoIncrementDeviceIDTest {
     assertEquals(deviceID1.hashCode(), deviceID2.hashCode());
     assertNotEquals(deviceID1.hashCode(), deviceID3.hashCode());
 
-    AutoIncrementDeviceID autoIncrementDeviceID1 = new AutoIncrementDeviceID();
+    StandAloneAutoIncDeviceID autoIncrementDeviceID1 = new StandAloneAutoIncDeviceID();
     autoIncrementDeviceID1.setAutoIncrementID(1);
-    AutoIncrementDeviceID autoIncrementDeviceID2 = new AutoIncrementDeviceID();
+    StandAloneAutoIncDeviceID autoIncrementDeviceID2 = new StandAloneAutoIncDeviceID();
     autoIncrementDeviceID2.setAutoIncrementID(1);
-    AutoIncrementDeviceID autoIncrementDeviceID3 = new AutoIncrementDeviceID();
+    StandAloneAutoIncDeviceID autoIncrementDeviceID3 = new StandAloneAutoIncDeviceID();
     autoIncrementDeviceID3.setAutoIncrementID(3);
     assertEquals(autoIncrementDeviceID1.hashCode(), autoIncrementDeviceID2.hashCode());
     assertNotEquals(autoIncrementDeviceID1.hashCode(), autoIncrementDeviceID3.hashCode());
@@ -86,11 +86,11 @@ public class AutoIncrementDeviceIDTest {
     assertNotEquals(deviceID1, deviceID3);
     assertNotEquals(deviceID1, sha256DeviceID);
 
-    AutoIncrementDeviceID autoIncrementDeviceID1 = new AutoIncrementDeviceID();
+    StandAloneAutoIncDeviceID autoIncrementDeviceID1 = new StandAloneAutoIncDeviceID();
     autoIncrementDeviceID1.setAutoIncrementID(1);
-    AutoIncrementDeviceID autoIncrementDeviceID2 = new AutoIncrementDeviceID();
+    StandAloneAutoIncDeviceID autoIncrementDeviceID2 = new StandAloneAutoIncDeviceID();
     autoIncrementDeviceID2.setAutoIncrementID(1);
-    AutoIncrementDeviceID autoIncrementDeviceID3 = new AutoIncrementDeviceID();
+    StandAloneAutoIncDeviceID autoIncrementDeviceID3 = new StandAloneAutoIncDeviceID();
     autoIncrementDeviceID3.setAutoIncrementID(3);
     assertEquals(autoIncrementDeviceID1, autoIncrementDeviceID2);
     assertNotEquals(autoIncrementDeviceID1, autoIncrementDeviceID3);
@@ -111,7 +111,8 @@ public class AutoIncrementDeviceIDTest {
     ByteBuffer byteBuffer = ByteBuffer.allocate(100);
     IDeviceID deviceID = DeviceIDFactory.getInstance().getDeviceID("root.sg.x.d1");
     deviceID.serialize(byteBuffer);
-    IDeviceID deviceID1 = AutoIncrementDeviceID.deserialize(byteBuffer);
+    byteBuffer.flip();
+    IDeviceID deviceID1 = StandAloneAutoIncDeviceID.deserialize(byteBuffer);
     assertEquals(deviceID, deviceID1);
   }
 

@@ -22,10 +22,10 @@ package org.apache.iotdb.db.metadata.idtable.entry;
 import org.apache.iotdb.commons.path.PartialPath;
 import org.apache.iotdb.commons.utils.TestOnly;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
-import org.apache.iotdb.db.metadata.idtable.DeviceID.AutoIncrementDeviceID;
-import org.apache.iotdb.db.metadata.idtable.DeviceID.IDeviceID;
-import org.apache.iotdb.db.metadata.idtable.DeviceID.PlainDeviceID;
-import org.apache.iotdb.db.metadata.idtable.DeviceID.SHA256DeviceID;
+import org.apache.iotdb.db.metadata.idtable.deviceID.IDeviceID;
+import org.apache.iotdb.db.metadata.idtable.deviceID.PlainDeviceID;
+import org.apache.iotdb.db.metadata.idtable.deviceID.SHA256DeviceID;
+import org.apache.iotdb.db.metadata.idtable.deviceID.StandAloneAutoIncDeviceID;
 
 import java.util.function.Function;
 
@@ -64,7 +64,7 @@ public class DeviceIDFactory {
           .getConfig()
           .getDeviceIDTransformationMethod()
           .equals("AutoIncrement_INT")) {
-        getDeviceIDFunction = AutoIncrementDeviceID::new;
+        getDeviceIDFunction = StandAloneAutoIncDeviceID::new;
         return;
       }
     }
@@ -106,10 +106,27 @@ public class DeviceIDFactory {
           .getConfig()
           .getDeviceIDTransformationMethod()
           .equals("AutoIncrement_INT")) {
-        getDeviceIDFunction = AutoIncrementDeviceID::new;
+        getDeviceIDFunction = StandAloneAutoIncDeviceID::new;
         return;
       }
     }
     getDeviceIDFunction = PlainDeviceID::new;
+  }
+
+  public Class getDeviceIDClass() {
+    if (IoTDBDescriptor.getInstance().getConfig().isEnableIDTable()) {
+      if (IoTDBDescriptor.getInstance()
+          .getConfig()
+          .getDeviceIDTransformationMethod()
+          .equals("SHA256")) {
+        return SHA256DeviceID.class;
+      } else if (IoTDBDescriptor.getInstance()
+          .getConfig()
+          .getDeviceIDTransformationMethod()
+          .equals("AutoIncrement_INT")) {
+        return StandAloneAutoIncDeviceID.class;
+      }
+    }
+    return PlainDeviceID.class;
   }
 }
