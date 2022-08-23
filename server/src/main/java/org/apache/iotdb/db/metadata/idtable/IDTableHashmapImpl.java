@@ -26,7 +26,6 @@ import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.exception.metadata.DataTypeMismatchException;
 import org.apache.iotdb.db.metadata.idtable.deviceID.IDeviceID;
-import org.apache.iotdb.db.metadata.idtable.deviceID.IStatefulDeviceID;
 import org.apache.iotdb.db.metadata.idtable.entry.DeviceEntry;
 import org.apache.iotdb.db.metadata.idtable.entry.DeviceIDFactory;
 import org.apache.iotdb.db.metadata.idtable.entry.DiskSchemaEntry;
@@ -313,16 +312,6 @@ public class IDTableHashmapImpl implements IDTable {
     if (IDiskSchemaManager != null) {
       IDiskSchemaManager.close();
     }
-    // if the system uses IStatefulDeviceID, need to clean up the state of device id
-    if (IStatefulDeviceID.class.isAssignableFrom(
-        DeviceIDFactory.getInstance().getDeviceIDClass())) {
-      for (Map<IDeviceID, DeviceEntry> deviceEntryMap : idTables) {
-        for (IDeviceID iDeviceID : deviceEntryMap.keySet()) {
-          IStatefulDeviceID deviceID = (IStatefulDeviceID) iDeviceID;
-          deviceID.clean();
-        }
-      }
-    }
   }
 
   /**
@@ -398,10 +387,7 @@ public class IDTableHashmapImpl implements IDTable {
   public List<DeviceEntry> getAllDeviceEntry() {
     List<DeviceEntry> res = new ArrayList<>();
     for (int i = 0; i < NUM_OF_SLOTS; i++) {
-      for (DeviceEntry deviceEntry : idTables[i].values()) {
-        if (deviceEntry.isUseless()) continue;
-        res.add(deviceEntry);
-      }
+      res.addAll(idTables[i].values());
     }
     return res;
   }
@@ -501,15 +487,13 @@ public class IDTableHashmapImpl implements IDTable {
    */
   private DeviceEntry getDeviceEntryWithAlignedCheck(String deviceName, boolean isAligned)
       throws MetadataException {
-    IDeviceID deviceID = DeviceIDFactory.getInstance().getDeviceID(deviceName);
+    IDeviceID deviceID = DeviceIDFactory.getInstance().getAndSetDeviceID(deviceName);
     int slot = calculateSlot(deviceID);
 
     DeviceEntry deviceEntry = idTables[slot].get(deviceID);
-    // new device if deviceEntry == null
-    // although deviceEntry != null, if deviceEntry is useless, deviceEntry cannot be used to record
-    // device information, so a new deviceEntry is required
-    if (deviceEntry == null || deviceEntry.isUseless()) {
-      deviceEntry = new DeviceEntry(deviceID, true);
+    // new device
+    if (deviceEntry == null) {
+      deviceEntry = new DeviceEntry(deviceID);
       deviceEntry.setAligned(isAligned);
       idTables[slot].put(deviceID, deviceEntry);
 

@@ -33,6 +33,8 @@ import java.util.function.Function;
 public class DeviceIDFactory {
   Function<String, IDeviceID> getDeviceIDFunction;
 
+  Function<String, IDeviceID> getAndSetDeviceIDFunction;
+
   // region DeviceIDFactory Singleton
   private static class DeviceIDFactoryHolder {
 
@@ -59,16 +61,19 @@ public class DeviceIDFactory {
           .getDeviceIDTransformationMethod()
           .equals("SHA256")) {
         getDeviceIDFunction = SHA256DeviceID::new;
+        getAndSetDeviceIDFunction = SHA256DeviceID::new;
         return;
       } else if (IoTDBDescriptor.getInstance()
           .getConfig()
           .getDeviceIDTransformationMethod()
           .equals("AutoIncrement_INT")) {
-        getDeviceIDFunction = StandAloneAutoIncDeviceID::generateDeviceID;
+        getDeviceIDFunction = StandAloneAutoIncDeviceID::getDeviceID;
+        getAndSetDeviceIDFunction = StandAloneAutoIncDeviceID::generateDeviceID;
         return;
       }
     }
     getDeviceIDFunction = PlainDeviceID::new;
+    getAndSetDeviceIDFunction = PlainDeviceID::new;
   }
   // endregion
 
@@ -92,6 +97,26 @@ public class DeviceIDFactory {
     return getDeviceIDFunction.apply(devicePath);
   }
 
+  /**
+   * get and set device id by full path
+   *
+   * @param devicePath device path of the timeseries
+   * @return device id of the timeseries
+   */
+  public IDeviceID getAndSetDeviceID(PartialPath devicePath) {
+    return getAndSetDeviceIDFunction.apply(devicePath.toString());
+  }
+
+  /**
+   * get and set device id by full path
+   *
+   * @param devicePath device path of the timeseries
+   * @return device id of the timeseries
+   */
+  public IDeviceID getAndSetDeviceID(String devicePath) {
+    return getAndSetDeviceIDFunction.apply(devicePath);
+  }
+
   /** reset id method */
   @TestOnly
   public void reset() {
@@ -101,16 +126,20 @@ public class DeviceIDFactory {
           .getDeviceIDTransformationMethod()
           .equals("SHA256")) {
         getDeviceIDFunction = SHA256DeviceID::new;
+        getAndSetDeviceIDFunction = SHA256DeviceID::new;
         return;
       } else if (IoTDBDescriptor.getInstance()
           .getConfig()
           .getDeviceIDTransformationMethod()
           .equals("AutoIncrement_INT")) {
-        getDeviceIDFunction = StandAloneAutoIncDeviceID::generateDeviceID;
+        getDeviceIDFunction = StandAloneAutoIncDeviceID::getDeviceID;
+        getAndSetDeviceIDFunction = StandAloneAutoIncDeviceID::generateDeviceID;
+        StandAloneAutoIncDeviceID.reset();
         return;
       }
     }
     getDeviceIDFunction = PlainDeviceID::new;
+    getAndSetDeviceIDFunction = PlainDeviceID::new;
   }
 
   public Class getDeviceIDClass() {

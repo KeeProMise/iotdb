@@ -20,9 +20,9 @@ package org.apache.iotdb.db.metadata.idtable.deviceID;
 
 import org.apache.iotdb.commons.exception.IllegalPathException;
 import org.apache.iotdb.commons.path.PartialPath;
+import org.apache.iotdb.commons.utils.TestOnly;
 import org.apache.iotdb.db.metadata.idtable.IDTable;
 import org.apache.iotdb.db.metadata.idtable.IDTableManager;
-import org.apache.iotdb.db.metadata.idtable.entry.DeviceEntry;
 import org.apache.iotdb.tsfile.utils.ReadWriteIOUtils;
 
 import org.slf4j.Logger;
@@ -58,8 +58,16 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     }
   }
 
+  public static StandAloneAutoIncDeviceID getDeviceID(String deviceID) {
+    if (deviceID.startsWith("`") && deviceID.endsWith("`")) {
+      return fromAutoIncDeviceID(deviceID);
+    } else {
+      return getByDevicePath(deviceID);
+    }
+  }
+
   /**
-   * build device id from a standAloneAutoIncDeviceID
+   * get device id from a standAloneAutoIncDeviceID
    *
    * @param deviceID StandAloneAutoIncDeviceID deviceID, like: "`1`"
    * @return standAloneAutoIncDeviceID
@@ -95,10 +103,23 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
           deviceID.autoIncrementID = deviceIDs.size();
           deviceIDs.add(deviceIDs.size(), deviceID);
         }
-        // write a useless deviceEntry to idTable to prevent repeated generation of different
-        // AutoIncrementDeviceID objects for the same devicePath
-        idTable.putDeviceEntry(deviceID, new DeviceEntry(deviceID, false));
       } else {
+        deviceID = (StandAloneAutoIncDeviceID) idTable.getDeviceEntry(deviceID).getDeviceID();
+      }
+      return deviceID;
+    } catch (IllegalPathException e) {
+      logger.error(e.getMessage());
+      return null;
+    }
+  }
+
+  private static StandAloneAutoIncDeviceID getByDevicePath(String devicePath) {
+    try {
+      // Use idtable to determine whether the device has been created
+      IDTable idTable = IDTableManager.getInstance().getIDTable(new PartialPath(devicePath));
+      StandAloneAutoIncDeviceID deviceID = new StandAloneAutoIncDeviceID();
+      deviceID.parseAutoIncrementDeviceID(new SHA256DeviceID(devicePath));
+      if (idTable.getDeviceEntry(deviceID) != null) {
         deviceID = (StandAloneAutoIncDeviceID) idTable.getDeviceEntry(deviceID).getDeviceID();
       }
       return deviceID;
@@ -189,8 +210,8 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     }
   }
 
-  @Override
-  public void clean() {
+  @TestOnly
+  public static void reset() {
     synchronized (deviceIDs) {
       deviceIDs.clear();
     }

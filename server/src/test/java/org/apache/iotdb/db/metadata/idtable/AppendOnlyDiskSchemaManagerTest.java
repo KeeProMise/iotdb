@@ -83,7 +83,7 @@ public class AppendOnlyDiskSchemaManagerTest {
     for (int i = 0; i < 10; i++) {
       String devicePath = storageGroupPath + "." + "d" + i;
       String measurement = "s";
-      String deviceID = DeviceIDFactory.getInstance().getDeviceID(devicePath).toStringID();
+      String deviceID = DeviceIDFactory.getInstance().getAndSetDeviceID(devicePath).toStringID();
       DiskSchemaEntry schemaEntry =
           new DiskSchemaEntry(
               deviceID,
