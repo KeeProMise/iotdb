@@ -100,9 +100,8 @@ public class AppendOnlyDiskSchemaManagerTest {
   @Test
   public void recover() {
     serialize();
-    IDTable idTable =
-        new IDTableHashmapImpl(
-            SystemFileFactory.INSTANCE.getFile(systemDir + File.separator + storageGroupPath));
+    DeviceIDFactory.getInstance().reset();
+    IDTable idTable = IDTableManager.getInstance().getIDTableDirectly(storageGroupPath);
     appendOnlyDiskSchemaManager.recover(idTable);
     for (int i = 0; i < 10; i++) {
       String devicePath = storageGroupPath + "." + "d" + i;
@@ -128,8 +127,6 @@ public class AppendOnlyDiskSchemaManagerTest {
       for (DiskSchemaEntry diskSchemaEntry : diskSchemaEntries) {
         String devicePath = storageGroupPath + "." + "d" + i;
         String measurement = "s";
-        IDeviceID deviceID = DeviceIDFactory.getInstance().getDeviceID(devicePath);
-        assertEquals(diskSchemaEntry.deviceID, deviceID.toStringID());
         assertEquals(diskSchemaEntry.measurementName, measurement);
         assertEquals(diskSchemaEntry.seriesKey, devicePath + "." + measurement);
         i++;
