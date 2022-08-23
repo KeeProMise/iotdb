@@ -67,11 +67,11 @@ public class StandAloneAutoIncDeviceIDTest {
     assertNotEquals(deviceID1.hashCode(), deviceID3.hashCode());
 
     StandAloneAutoIncDeviceID autoIncrementDeviceID1 = new StandAloneAutoIncDeviceID();
-    autoIncrementDeviceID1.setAutoIncrementID(1);
+    autoIncrementDeviceID1.autoIncrementID = 1;
     StandAloneAutoIncDeviceID autoIncrementDeviceID2 = new StandAloneAutoIncDeviceID();
-    autoIncrementDeviceID2.setAutoIncrementID(1);
+    autoIncrementDeviceID2.autoIncrementID = 1;
     StandAloneAutoIncDeviceID autoIncrementDeviceID3 = new StandAloneAutoIncDeviceID();
-    autoIncrementDeviceID3.setAutoIncrementID(3);
+    autoIncrementDeviceID3.autoIncrementID = 3;
     assertEquals(autoIncrementDeviceID1.hashCode(), autoIncrementDeviceID2.hashCode());
     assertNotEquals(autoIncrementDeviceID1.hashCode(), autoIncrementDeviceID3.hashCode());
   }
@@ -87,11 +87,11 @@ public class StandAloneAutoIncDeviceIDTest {
     assertNotEquals(deviceID1, sha256DeviceID);
 
     StandAloneAutoIncDeviceID autoIncrementDeviceID1 = new StandAloneAutoIncDeviceID();
-    autoIncrementDeviceID1.setAutoIncrementID(1);
+    autoIncrementDeviceID1.autoIncrementID = 1;
     StandAloneAutoIncDeviceID autoIncrementDeviceID2 = new StandAloneAutoIncDeviceID();
-    autoIncrementDeviceID2.setAutoIncrementID(1);
+    autoIncrementDeviceID2.autoIncrementID = 1;
     StandAloneAutoIncDeviceID autoIncrementDeviceID3 = new StandAloneAutoIncDeviceID();
-    autoIncrementDeviceID3.setAutoIncrementID(3);
+    autoIncrementDeviceID3.autoIncrementID = 3;
     assertEquals(autoIncrementDeviceID1, autoIncrementDeviceID2);
     assertNotEquals(autoIncrementDeviceID1, autoIncrementDeviceID3);
   }

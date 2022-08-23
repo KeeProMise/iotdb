@@ -18,14 +18,17 @@
  */
 package org.apache.iotdb.db.metadata.idtable.deviceID;
 
-/** implementation deviceID class need to be recovered on system restart */
+/** stateful device id interface */
 public interface IStatefulDeviceID extends IDeviceID {
 
   /**
-   * recover from devicePath and deviceID
+   * recover state from devicePath and deviceID
    *
    * @param devicePath device path read from the non-volatile storage medium, like: "root.sg.x.d1"
    * @param deviceID device ID read from the non-volatile storage medium
    */
   void recover(String devicePath, String deviceID);
+
+  /** clean up state,when delete the device id */
+  void clean();
 }

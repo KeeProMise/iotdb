@@ -18,7 +18,6 @@
  */
 package org.apache.iotdb.db.metadata.idtable.deviceID;
 
-import org.apache.iotdb.commons.utils.TestOnly;
 import org.apache.iotdb.tsfile.utils.ReadWriteIOUtils;
 
 import java.nio.ByteBuffer;
@@ -128,6 +127,11 @@ public class StandAloneAutoIncDeviceID implements IStatefulDeviceID {
   }
 
   @Override
+  public void clean() {
+    devicePath2autoIncrementID.clear();
+  }
+
+  @Override
   public void serialize(ByteBuffer byteBuffer) {
     ReadWriteIOUtils.write(autoIncrementID, byteBuffer);
   }
@@ -136,10 +140,5 @@ public class StandAloneAutoIncDeviceID implements IStatefulDeviceID {
     StandAloneAutoIncDeviceID autoIncrementDeviceID = new StandAloneAutoIncDeviceID();
     autoIncrementDeviceID.autoIncrementID = ReadWriteIOUtils.readInt(byteBuffer);
     return autoIncrementDeviceID;
-  }
-
-  @TestOnly
-  public void setAutoIncrementID(int autoIncrementID) {
-    this.autoIncrementID = autoIncrementID;
   }
 }
