@@ -26,7 +26,6 @@ import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.exception.metadata.DataTypeMismatchException;
 import org.apache.iotdb.db.metadata.idtable.deviceID.IDeviceID;
-import org.apache.iotdb.db.metadata.idtable.deviceID.IStatefulDeviceID;
 import org.apache.iotdb.db.metadata.idtable.entry.DeviceEntry;
 import org.apache.iotdb.db.metadata.idtable.entry.DeviceIDFactory;
 import org.apache.iotdb.db.metadata.idtable.entry.DiskSchemaEntry;
@@ -311,15 +310,6 @@ public class IDTableHashmapImpl implements IDTable {
   public void clear() throws IOException {
     if (IDiskSchemaManager != null) {
       IDiskSchemaManager.close();
-    }
-    if (IStatefulDeviceID.class.isAssignableFrom(
-        DeviceIDFactory.getInstance().getDeviceIDClass())) {
-      for (Map<IDeviceID, DeviceEntry> deviceEntryMap : idTables) {
-        for (IDeviceID deviceID : deviceEntryMap.keySet()) {
-          IStatefulDeviceID statefulDeviceID = (IStatefulDeviceID) deviceID;
-          statefulDeviceID.clean();
-        }
-      }
     }
   }
 

@@ -107,6 +107,7 @@ public class DeviceIDFactory {
           .getDeviceIDTransformationMethod()
           .equals("AutoIncrement_INT")) {
         getDeviceIDFunction = StandAloneAutoIncDeviceID::new;
+        StandAloneAutoIncDeviceID.reset();
         return;
       }
     }

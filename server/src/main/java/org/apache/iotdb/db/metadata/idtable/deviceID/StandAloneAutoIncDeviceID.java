@@ -18,6 +18,7 @@
  */
 package org.apache.iotdb.db.metadata.idtable.deviceID;
 
+import org.apache.iotdb.commons.utils.TestOnly;
 import org.apache.iotdb.tsfile.utils.ReadWriteIOUtils;
 
 import java.nio.ByteBuffer;
@@ -126,8 +127,8 @@ public class StandAloneAutoIncDeviceID implements IStatefulDeviceID {
     devicePath2autoIncrementID.put(sha256DeviceID, this);
   }
 
-  @Override
-  public void clean() {
+  @TestOnly
+  public static void reset() {
     devicePath2autoIncrementID.clear();
   }
 
