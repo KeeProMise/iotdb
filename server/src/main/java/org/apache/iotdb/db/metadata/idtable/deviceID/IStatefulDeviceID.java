@@ -16,20 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.iotdb.db.metadata.idtable.deviceID;
 
-package org.apache.iotdb.db.metadata.idtable.entry;
-
-import java.nio.ByteBuffer;
-
-/** device id interface */
-public interface IDeviceID {
+/** stateful device id interface */
+public interface IStatefulDeviceID extends IDeviceID {
 
   /**
-   * to string format
+   * recover state from devicePath and deviceID
    *
-   * @return string format device id
+   * @param devicePath device path read from the non-volatile storage medium, like: "root.sg.x.d1"
+   * @param deviceID device ID read from the non-volatile storage medium
    */
-  public String toStringID();
-
-  public void serialize(ByteBuffer byteBuffer);
+  void recover(String devicePath, String deviceID);
 }

@@ -27,9 +27,9 @@ import org.apache.iotdb.db.exception.StorageEngineException;
 import org.apache.iotdb.db.exception.metadata.DataTypeMismatchException;
 import org.apache.iotdb.db.exception.query.QueryProcessException;
 import org.apache.iotdb.db.metadata.LocalSchemaProcessor;
+import org.apache.iotdb.db.metadata.idtable.deviceID.IDeviceID;
 import org.apache.iotdb.db.metadata.idtable.entry.DeviceIDFactory;
 import org.apache.iotdb.db.metadata.idtable.entry.DiskSchemaEntry;
-import org.apache.iotdb.db.metadata.idtable.entry.IDeviceID;
 import org.apache.iotdb.db.metadata.idtable.entry.SchemaEntry;
 import org.apache.iotdb.db.metadata.lastCache.container.ILastCacheContainer;
 import org.apache.iotdb.db.metadata.mnode.IMeasurementMNode;
@@ -95,12 +95,12 @@ public class IDTableTest {
 
   @After
   public void clean() throws IOException, StorageEngineException {
+    EnvironmentUtils.cleanEnv();
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(isEnableIDTable);
     IoTDBDescriptor.getInstance()
         .getConfig()
         .setDeviceIDTransformationMethod(originalDeviceIDTransformationMethod);
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTableLogFile(isEnableIDTableLogFile);
-    EnvironmentUtils.cleanEnv();
   }
 
   @Test

@@ -64,12 +64,12 @@ public class IDTableLogFileTest {
 
   @After
   public void clean() throws IOException, StorageEngineException {
+    EnvironmentUtils.cleanEnv();
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(isEnableIDTable);
     IoTDBDescriptor.getInstance()
         .getConfig()
         .setDeviceIDTransformationMethod(originalDeviceIDTransformationMethod);
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTableLogFile(isEnableIDTableLogFile);
-    EnvironmentUtils.cleanEnv();
   }
 
   @Test

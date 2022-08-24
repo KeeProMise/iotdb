@@ -21,6 +21,7 @@ package org.apache.iotdb.db.metadata.idtable;
 
 import org.apache.iotdb.commons.exception.MetadataException;
 import org.apache.iotdb.commons.utils.TestOnly;
+import org.apache.iotdb.db.metadata.idtable.deviceID.IStatefulDeviceID;
 import org.apache.iotdb.db.metadata.idtable.entry.DeviceIDFactory;
 import org.apache.iotdb.db.metadata.idtable.entry.DiskSchemaEntry;
 import org.apache.iotdb.db.metadata.idtable.entry.SchemaEntry;
@@ -38,6 +39,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -158,11 +160,29 @@ public class AppendOnlyDiskSchemaManager implements IDiskSchemaManager {
                   TSEncoding.deserialize(cur.encoding),
                   CompressionType.deserialize(cur.compressor),
                   loc);
+          if (IStatefulDeviceID.class.isAssignableFrom(
+              DeviceIDFactory.getInstance().getDeviceIDClass())) {
+            IStatefulDeviceID statefulDeviceID =
+                (IStatefulDeviceID)
+                    DeviceIDFactory.getInstance()
+                        .getDeviceIDClass()
+                        .getDeclaredConstructor()
+                        .newInstance();
+            statefulDeviceID.recover(
+                cur.seriesKey.substring(
+                    0, cur.seriesKey.length() - cur.measurementName.length() - 1),
+                cur.deviceID);
+          }
           idTable.putSchemaEntry(cur.deviceID, cur.measurementName, schemaEntry, cur.isAligned);
         }
         loc += cur.entrySize;
       }
-    } catch (IOException | MetadataException e) {
+    } catch (IOException
+        | MetadataException
+        | NoSuchMethodException
+        | InvocationTargetException
+        | InstantiationException
+        | IllegalAccessException e) {
       logger.info("Last entry is incomplete, we will recover as much as we can.");
       try {
         outputStream.getChannel().truncate(loc);
