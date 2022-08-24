@@ -68,7 +68,7 @@ public class DeviceIDFactory {
           .getDeviceIDTransformationMethod()
           .equals("AutoIncrement_INT")) {
         getDeviceIDFunction = StandAloneAutoIncDeviceID::getDeviceID;
-        getAndSetDeviceIDFunction = StandAloneAutoIncDeviceID::generateDeviceID;
+        getAndSetDeviceIDFunction = StandAloneAutoIncDeviceID::getAndSetDeviceID;
         return;
       }
     }
@@ -133,7 +133,7 @@ public class DeviceIDFactory {
           .getDeviceIDTransformationMethod()
           .equals("AutoIncrement_INT")) {
         getDeviceIDFunction = StandAloneAutoIncDeviceID::getDeviceID;
-        getAndSetDeviceIDFunction = StandAloneAutoIncDeviceID::generateDeviceID;
+        getAndSetDeviceIDFunction = StandAloneAutoIncDeviceID::getAndSetDeviceID;
         StandAloneAutoIncDeviceID.reset();
         return;
       }

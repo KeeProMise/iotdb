@@ -133,6 +133,8 @@ public interface IDTable {
       throws MetadataException;
 
   /** clear id table and close file */
+  @TestOnly
+  // todo
   void clear() throws IOException;
 
   /**

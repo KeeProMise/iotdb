@@ -39,9 +39,10 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
   private static Logger logger = LoggerFactory.getLogger(IDTable.class);
 
   // using list to find the corresponding deviceID according to the ID
-  private static final List<IDeviceID> deviceIDs;
+  private static List<IDeviceID> deviceIDs;
 
-  // auto-incrementing id starting with 0
+  // auto-incrementing id starting with 1
+  // todo
   int autoIncrementID;
 
   static {
@@ -50,19 +51,25 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
 
   public StandAloneAutoIncDeviceID() {}
 
-  public static StandAloneAutoIncDeviceID generateDeviceID(String deviceID) {
+  public StandAloneAutoIncDeviceID(String devicePath) {
+    super(devicePath);
+  }
+
+  // todo
+  public static StandAloneAutoIncDeviceID getAndSetDeviceID(String deviceID) {
     if (deviceID.startsWith("`") && deviceID.endsWith("`")) {
       return fromAutoIncDeviceID(deviceID);
     } else {
-      return buildAutoIncDeviceID(deviceID);
+      return buildDeviceID(deviceID);
     }
   }
 
+  // todo
   public static StandAloneAutoIncDeviceID getDeviceID(String deviceID) {
     if (deviceID.startsWith("`") && deviceID.endsWith("`")) {
       return fromAutoIncDeviceID(deviceID);
     } else {
-      return getByDevicePath(deviceID);
+      return fromDevicePath(deviceID);
     }
   }
 
@@ -75,36 +82,24 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
   private static StandAloneAutoIncDeviceID fromAutoIncDeviceID(String deviceID) {
     deviceID = deviceID.substring(1, deviceID.length() - 1);
     int id = Integer.parseInt(deviceID);
-    try {
-      synchronized (deviceIDs) {
-        return (StandAloneAutoIncDeviceID) deviceIDs.get(id);
-      }
-    } catch (IndexOutOfBoundsException e) {
-      logger.info(e.getMessage());
-      return null;
+    synchronized (deviceIDs) {
+      return (StandAloneAutoIncDeviceID) deviceIDs.get(id);
     }
   }
 
-  /**
-   * build device id from a devicePath
-   *
-   * @param devicePath device path, like: "root.sg.x.d1"
-   * @return standAloneAutoIncDeviceID
-   */
-  private static StandAloneAutoIncDeviceID buildAutoIncDeviceID(String devicePath) {
+  // todo
+  private static StandAloneAutoIncDeviceID fromDevicePath(String devicePath) {
     try {
       // Use idtable to determine whether the device has been created
       IDTable idTable = IDTableManager.getInstance().getIDTable(new PartialPath(devicePath));
-      StandAloneAutoIncDeviceID deviceID = new StandAloneAutoIncDeviceID();
-      deviceID.parseAutoIncrementDeviceID(new SHA256DeviceID(devicePath));
-      // this device is added for the first time
-      if (idTable.getDeviceEntry(deviceID) == null) {
-        synchronized (deviceIDs) {
-          deviceID.autoIncrementID = deviceIDs.size();
-          deviceIDs.add(deviceIDs.size(), deviceID);
-        }
-      } else {
+      StandAloneAutoIncDeviceID deviceID = new StandAloneAutoIncDeviceID(devicePath);
+      if (idTable.getDeviceEntry(deviceID) != null) {
         deviceID = (StandAloneAutoIncDeviceID) idTable.getDeviceEntry(deviceID).getDeviceID();
+      } else {
+        deviceID.autoIncrementID = 0;
+        // todo
+        if (deviceIDs.size() == 0) deviceIDs.add(0, deviceID);
+        else deviceIDs.set(0, deviceID);
       }
       return deviceID;
     } catch (IllegalPathException e) {
@@ -113,13 +108,21 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     }
   }
 
-  private static StandAloneAutoIncDeviceID getByDevicePath(String devicePath) {
+  // todo
+  private static StandAloneAutoIncDeviceID buildDeviceID(String devicePath) {
     try {
       // Use idtable to determine whether the device has been created
       IDTable idTable = IDTableManager.getInstance().getIDTable(new PartialPath(devicePath));
-      StandAloneAutoIncDeviceID deviceID = new StandAloneAutoIncDeviceID();
-      deviceID.parseAutoIncrementDeviceID(new SHA256DeviceID(devicePath));
-      if (idTable.getDeviceEntry(deviceID) != null) {
+      StandAloneAutoIncDeviceID deviceID = new StandAloneAutoIncDeviceID(devicePath);
+      // this device is added for the first time
+      if (idTable.getDeviceEntry(deviceID) == null) {
+        synchronized (deviceIDs) {
+          // todo
+          if (deviceIDs.size() == 0) deviceIDs.add(0, null);
+          deviceID.autoIncrementID = deviceIDs.size();
+          deviceIDs.add(deviceIDs.size(), deviceID);
+        }
+      } else {
         deviceID = (StandAloneAutoIncDeviceID) idTable.getDeviceEntry(deviceID).getDeviceID();
       }
       return deviceID;
@@ -199,14 +202,11 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     this.autoIncrementID = Integer.parseInt(deviceID);
     // if there is out-of-order data, write the deviceID to the correct index of the array
     synchronized (deviceIDs) {
-      if (autoIncrementID < deviceIDs.size()) {
-        deviceIDs.set(autoIncrementID, this);
-      } else {
-        for (int i = deviceIDs.size(); i < autoIncrementID; i++) {
-          deviceIDs.add(i, null);
-        }
-        deviceIDs.add(autoIncrementID, this);
+      if (autoIncrementID < deviceIDs.size() && deviceIDs.get(autoIncrementID) != null) return;
+      for (int i = deviceIDs.size(); i < autoIncrementID; i++) {
+        deviceIDs.add(i, null);
       }
+      deviceIDs.add(autoIncrementID, this);
     }
   }
 

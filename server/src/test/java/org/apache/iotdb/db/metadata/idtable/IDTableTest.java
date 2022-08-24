@@ -599,6 +599,17 @@ public class IDTableTest {
       DropTriggerPlan plan2 = (DropTriggerPlan) processor.parseSQLToPhysicalPlan(sql2);
       TriggerRegistrationService.getInstance().deregister(plan2);
 
+      insertRowPlan =
+          new InsertRowPlan(
+              new PartialPath("root.laptop.d1.non_aligned_device"),
+              time,
+              new String[] {"s1", "s2"},
+              dataTypes,
+              columns,
+              false);
+      insertRowPlan.setMeasurementMNodes(
+          new IMeasurementMNode[insertRowPlan.getMeasurements().length]);
+
       idTable.getSeriesSchemas(insertRowPlan);
       assertNull(s1Node.getTriggerExecutor());
     } catch (MetadataException | StorageEngineException | QueryProcessException e) {
