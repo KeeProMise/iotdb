@@ -344,18 +344,6 @@ public class IDTableHashmapImpl implements IDTable {
   }
 
   /**
-   * save device id and deviceEntry to the idTables
-   *
-   * @param deviceID device id of the device path
-   * @param deviceEntry device entry
-   */
-  @Override
-  public void putDeviceEntry(IDeviceID deviceID, DeviceEntry deviceEntry) {
-    int slot = calculateSlot(deviceID);
-    idTables[slot].put(deviceID, deviceEntry);
-  }
-
-  /**
    * get schema from device and measurements
    *
    * @param deviceName device name of the time series
