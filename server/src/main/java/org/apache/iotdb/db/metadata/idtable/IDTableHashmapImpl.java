@@ -97,8 +97,7 @@ public class IDTableHashmapImpl implements IDTable {
   @Override
   public synchronized void createAlignedTimeseries(CreateAlignedTimeSeriesPlan plan)
       throws MetadataException {
-    DeviceEntry deviceEntry =
-        getAndSetDeviceEntryWithAlignedCheck(plan.getPrefixPath().toString(), true);
+    DeviceEntry deviceEntry = getDeviceEntryWithAlignedCheck(plan.getPrefixPath().toString(), true);
 
     for (int i = 0; i < plan.getMeasurements().size(); i++) {
       PartialPath fullPath =
@@ -124,8 +123,7 @@ public class IDTableHashmapImpl implements IDTable {
    */
   @Override
   public synchronized void createTimeseries(CreateTimeSeriesPlan plan) throws MetadataException {
-    DeviceEntry deviceEntry =
-        getAndSetDeviceEntryWithAlignedCheck(plan.getPath().getDevice(), false);
+    DeviceEntry deviceEntry = getDeviceEntryWithAlignedCheck(plan.getPath().getDevice(), false);
     SchemaEntry schemaEntry =
         new SchemaEntry(
             plan.getDataType(),
@@ -195,7 +193,7 @@ public class IDTableHashmapImpl implements IDTable {
 
     // 1. get device entry and check align
     DeviceEntry deviceEntry =
-        getAndSetDeviceEntryWithAlignedCheck(devicePath.toString(), plan.isAligned());
+        getDeviceEntryWithAlignedCheck(devicePath.toString(), plan.isAligned());
 
     // 2. get schema of each measurement
     for (int i = 0; i < measurementList.length; i++) {
@@ -492,41 +490,6 @@ public class IDTableHashmapImpl implements IDTable {
     }
 
     return new InsertMeasurementMNode(measurementName, schemaEntry);
-  }
-
-  /**
-   * get device id from device path and check is aligned,
-   *
-   * @param deviceName device name of the time series
-   * @param isAligned whether the insert plan is aligned
-   * @return device entry of the timeseries
-   */
-  // todo
-  private DeviceEntry getAndSetDeviceEntryWithAlignedCheck(String deviceName, boolean isAligned)
-      throws MetadataException {
-    IDeviceID deviceID = DeviceIDFactory.getInstance().getAndSetDeviceID(deviceName);
-    int slot = calculateSlot(deviceID);
-
-    DeviceEntry deviceEntry = idTables[slot].get(deviceID);
-    // new device
-    if (deviceEntry == null) {
-      deviceEntry = new DeviceEntry(deviceID);
-      deviceEntry.setAligned(isAligned);
-      idTables[slot].put(deviceID, deviceEntry);
-
-      return deviceEntry;
-    }
-
-    // check aligned
-    if (deviceEntry.isAligned() != isAligned) {
-      throw new MetadataException(
-          String.format(
-              "Timeseries under path [%s]'s align value is [%b], which is not consistent with insert plan",
-              deviceName, deviceEntry.isAligned()));
-    }
-
-    // reuse device entry in map
-    return deviceEntry;
   }
 
   /**
