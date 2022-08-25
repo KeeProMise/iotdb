@@ -84,7 +84,7 @@ public class IDTableRestartTest {
   @Test
   public void testRawDataQueryAfterRestart() throws Exception {
     String sg1 = "root.isp1";
-    String sg2 = "root.isp1";
+    String sg2 = "root.isp2";
     insertDataInMemoryWithTablet(sg1 + ".d1");
     insertDataInMemoryWithRecord(sg1 + ".d1");
     insertDataInMemoryWithTablet(sg2 + ".d1");
@@ -157,6 +157,9 @@ public class IDTableRestartTest {
     }
 
     assertEquals(5, count);
+    queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select * from " + sg2 + ".d2");
+    dataSet = executor.processQuery(queryPlan, EnvironmentUtils.TEST_QUERY_CONTEXT);
+    Assert.assertEquals(0, dataSet.getPaths().size());
   }
 
   private void insertDataInMemoryWithRecord(String storageGroupPath)

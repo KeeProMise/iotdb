@@ -314,7 +314,9 @@ public class IDTableHashmapImpl implements IDTable {
     if (IDiskSchemaManager != null) {
       IDiskSchemaManager.close();
     }
-    StandAloneAutoIncDeviceID.reset();
+    if (DeviceIDFactory.getInstance().getDeviceIDClass() == StandAloneAutoIncDeviceID.class) {
+      StandAloneAutoIncDeviceID.clear();
+    }
   }
 
   /**
@@ -380,6 +382,7 @@ public class IDTableHashmapImpl implements IDTable {
     for (int i = 0; i < NUM_OF_SLOTS; i++) {
       res.addAll(idTables[i].values());
     }
+
     return res;
   }
 

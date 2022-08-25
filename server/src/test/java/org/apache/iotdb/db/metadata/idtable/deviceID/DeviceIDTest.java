@@ -66,9 +66,12 @@ public class DeviceIDTest {
     PartialPath partialPath2 = new PartialPath("root.sg1.d1.s2");
     PartialPath partialPath3 = new PartialPath("root.sg1.d2.s1");
 
-    IDeviceID deviceID1 = DeviceIDFactory.getInstance().getDeviceID(partialPath1.getDevicePath());
-    IDeviceID deviceID2 = DeviceIDFactory.getInstance().getDeviceID(partialPath2.getDevicePath());
-    IDeviceID deviceID3 = DeviceIDFactory.getInstance().getDeviceID(partialPath3.getDevicePath());
+    IDeviceID deviceID1 =
+        DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate(partialPath1.getDevicePath());
+    IDeviceID deviceID2 =
+        DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate(partialPath2.getDevicePath());
+    IDeviceID deviceID3 =
+        DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate(partialPath3.getDevicePath());
 
     assertEquals(deviceID1, deviceID2);
     assertNotEquals(deviceID1, deviceID3);
@@ -78,7 +81,7 @@ public class DeviceIDTest {
   @Test
   public void testHashCode() {
     IDeviceID deviceID1 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg1.x.d1");
-    IDeviceID deviceID2 = DeviceIDFactory.getInstance().getDeviceID("root.sg1.x.d1");
+    IDeviceID deviceID2 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg1.x.d1");
     IDeviceID deviceID3 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg1.x.d2");
     assertEquals(deviceID1.hashCode(), deviceID2.hashCode());
     assertNotEquals(deviceID1.hashCode(), deviceID3.hashCode());
@@ -90,7 +93,7 @@ public class DeviceIDTest {
     assertEquals(deviceID3.hashCode(), deviceID6.hashCode());
 
     deviceID1 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg2.x.d1");
-    deviceID2 = DeviceIDFactory.getInstance().getDeviceID("root.sg2.x.d1");
+    deviceID2 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg2.x.d1");
     deviceID3 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg2.x.d2");
     assertEquals(deviceID1.hashCode(), deviceID2.hashCode());
     assertNotEquals(deviceID1.hashCode(), deviceID3.hashCode());
@@ -105,7 +108,7 @@ public class DeviceIDTest {
   @Test
   public void testEquals() throws MetadataException {
     IDeviceID deviceID1 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg1.x.d1");
-    IDeviceID deviceID2 = DeviceIDFactory.getInstance().getDeviceID("root.sg1.x.d1");
+    IDeviceID deviceID2 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg1.x.d1");
     IDeviceID deviceID3 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg1.x.d2");
     assertEquals(deviceID1, deviceID2);
     assertNotEquals(deviceID1, deviceID3);
@@ -117,7 +120,7 @@ public class DeviceIDTest {
     assertEquals(deviceID3, deviceID6);
 
     deviceID1 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg2.x.d1");
-    deviceID2 = DeviceIDFactory.getInstance().getDeviceID("root.sg2.x.d1");
+    deviceID2 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg2.x.d1");
     deviceID3 = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg2.x.d2");
     assertEquals(deviceID1, deviceID2);
     assertNotEquals(deviceID1, deviceID3);
@@ -133,7 +136,8 @@ public class DeviceIDTest {
   public void testSerializeAndDeserialize() throws MetadataException {
     for (int i = 1; i < 10; i++) {
       ByteBuffer byteBuffer = ByteBuffer.allocate(100);
-      IDeviceID deviceID = DeviceIDFactory.getInstance().getDeviceID("root.sg.x.d" + i);
+      IDeviceID deviceID =
+          DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate("root.sg.x.d" + i);
       deviceID.serialize(byteBuffer);
       byteBuffer.flip();
       IDeviceID deviceID1 = StandAloneAutoIncDeviceID.deserialize(byteBuffer);

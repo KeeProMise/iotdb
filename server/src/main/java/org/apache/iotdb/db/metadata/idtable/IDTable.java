@@ -145,7 +145,7 @@ public interface IDTable {
   DeviceEntry getDeviceEntry(String deviceName);
 
   /**
-   * get device entry from deviceID
+   * get device entry from device id
    *
    * @param deviceID device id of the device path
    * @return device entry
@@ -171,7 +171,7 @@ public interface IDTable {
   /**
    * put schema entry to id table, currently used in recover
    *
-   * @param deviceID deviceID
+   * @param deviceID device id
    * @param measurement measurement name
    * @param schemaEntry schema entry to put
    * @param isAligned is the device aligned

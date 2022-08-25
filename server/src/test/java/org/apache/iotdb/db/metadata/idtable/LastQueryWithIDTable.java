@@ -174,6 +174,10 @@ public class LastQueryWithIDTable {
         IDTableManager.getInstance()
             .getIDTable(new PartialPath("root.isp2.d1"))
             .getLastCache(new TimeseriesID(new PartialPath("root.isp2.d1.s1"))));
+
+    queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select last * from root.isp2.d2");
+    dataSet = executor.processQuery(queryPlan, EnvironmentUtils.TEST_QUERY_CONTEXT);
+    Assert.assertEquals(0, dataSet.getPaths().size());
   }
 
   private void insertDataInMemory(String path) throws IllegalPathException, QueryProcessException {

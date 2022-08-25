@@ -54,9 +54,15 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
   // maintains the auto-increment id of the schemaRegion
   private static Map<Integer, List<IDeviceID>> deviceIDsMap;
 
-  // starting with 0,the maximum value is Integer.MAX_VALUE，if the schemaRegionId==-1 of a
-  // StandAloneAutoIncDeviceID instance object, it means that the device corresponding to the
-  // StandAloneAutoIncDeviceID instance does not exist
+  // if the device represented by devicePath is not written to the metadata module, use this
+  // constant instead of devicePath to generate a sha266 value of StandAloneAutoIncDeviceID instance
+  private static final String INVALID_DEVICE_PATH = "invalid.device.path";
+
+  // if the schemaRegionId==-1 of a StandAloneAutoIncDeviceID instance, it means that the device
+  // corresponding to the StandAloneAutoIncDeviceID instance does not exist
+  private static StandAloneAutoIncDeviceID deviceIdOfNonExistentDevice;
+
+  // starting with 0,the maximum value is Integer.MAX_VALUE
   int schemaRegionId;
 
   // starting with 0,the maximum value is Integer.MAX_VALUE
@@ -65,6 +71,21 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
   static {
     deviceIDsMap = new ConcurrentHashMap<>();
     configManager = LocalConfigNode.getInstance();
+    setDeviceIdOfNonExistentDevice();
+  }
+
+  /**
+   * for the query path of a non-existing device, a deviceID with schemaRegion = -1 and
+   * autoIncrementID = 0 will be generated, and then stored in the deviceIDsMap. although it seems
+   * that all non-existing devicePaths will be converted into StandAloneAutoIncDeviceID objects with
+   * the same member variable value(schemaRegion,autoIncrementID), but due to the equality of
+   * StandAloneAutoIncDeviceID objects is determined by the sha256 hash value, so there is no
+   * adverse effect
+   */
+  private static void setDeviceIdOfNonExistentDevice() {
+    deviceIdOfNonExistentDevice = new StandAloneAutoIncDeviceID(INVALID_DEVICE_PATH);
+    deviceIdOfNonExistentDevice.schemaRegionId = -1;
+    deviceIdOfNonExistentDevice.autoIncrementID = 0;
   }
 
   public StandAloneAutoIncDeviceID() {}
@@ -114,6 +135,9 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     long id = Long.parseLong(deviceID);
     int schemaRegionId = (int) (id >>> 32);
     int autoIncrementID = (int) id;
+    if (schemaRegionId == -1) {
+      return deviceIdOfNonExistentDevice;
+    }
     List<IDeviceID> deviceIDs = deviceIDsMap.get(schemaRegionId);
     synchronized (deviceIDs) {
       return (StandAloneAutoIncDeviceID) deviceIDs.get(autoIncrementID);
@@ -133,26 +157,13 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
       StandAloneAutoIncDeviceID deviceID = new StandAloneAutoIncDeviceID(devicePath);
       if (idTable.getDeviceEntry(deviceID) != null) {
         deviceID = (StandAloneAutoIncDeviceID) idTable.getDeviceEntry(deviceID).getDeviceID();
+        return deviceID;
       } else {
-        // for the query path of a non-existing device, a deviceID with schemaRegion = -1 and
-        // autoIncrementID = 0 will be generated, and then stored in the deviceIDsMap.
-        // although it seems that all non-existing devicePaths will be converted into
-        // StandAloneAutoIncDeviceID objects with the same member variable value, but due to the
-        // equality of StandAloneAutoIncDeviceID objects is determined by the sha256 hash value, so
-        // there is no adverse effect
-        deviceID.schemaRegionId = -1;
-        deviceID.autoIncrementID = 0;
-        List<IDeviceID> deviceIDs =
-            deviceIDsMap.computeIfAbsent(deviceID.schemaRegionId, integer -> new ArrayList<>());
-        synchronized (deviceIDs) {
-          if (deviceIDs.size() == 0) deviceIDs.add(deviceID.autoIncrementID, deviceID);
-          else deviceIDs.set(0, deviceID);
-        }
+        return deviceIdOfNonExistentDevice;
       }
-      return deviceID;
     } catch (IllegalPathException e) {
-      logger.error(e.getMessage());
-      return null;
+      logger.info(e.getMessage());
+      return deviceIdOfNonExistentDevice;
     }
   }
 
@@ -273,5 +284,14 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
   @TestOnly
   public static void reset() {
     deviceIDsMap.clear();
+    configManager = LocalConfigNode.getInstance();
+    setDeviceIdOfNonExistentDevice();
+  }
+
+  @TestOnly
+  public static void clear() {
+    deviceIDsMap.clear();
+    configManager = null;
+    deviceIdOfNonExistentDevice = null;
   }
 }
