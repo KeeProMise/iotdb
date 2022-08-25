@@ -18,9 +18,12 @@
  */
 package org.apache.iotdb.db.metadata.idtable.deviceID;
 
+import org.apache.iotdb.commons.consensus.SchemaRegionId;
 import org.apache.iotdb.commons.exception.IllegalPathException;
+import org.apache.iotdb.commons.exception.MetadataException;
 import org.apache.iotdb.commons.path.PartialPath;
 import org.apache.iotdb.commons.utils.TestOnly;
+import org.apache.iotdb.db.localconfignode.LocalConfigNode;
 import org.apache.iotdb.db.metadata.idtable.IDTable;
 import org.apache.iotdb.db.metadata.idtable.IDTableManager;
 import org.apache.iotdb.tsfile.utils.ReadWriteIOUtils;
@@ -31,6 +34,8 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /** Using auto-incrementing id as device id */
 public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatefulDeviceID {
@@ -38,15 +43,22 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
   /** logger */
   private static Logger logger = LoggerFactory.getLogger(IDTable.class);
 
-  // using list to find the corresponding deviceID according to the ID
-  private static List<IDeviceID> deviceIDs;
+  // todo
+  private static LocalConfigNode configManager;
 
-  // auto-incrementing id starting with 1
+  // using list to find the corresponding deviceID according to the ID
+  private static Map<Integer, List<IDeviceID>> deviceIDsMap;
+
+  // todo
+  int schemaRegionId;
+
+  // auto-incrementing id starting with 0
   // todo
   int autoIncrementID;
 
   static {
-    deviceIDs = new ArrayList<>();
+    deviceIDsMap = new ConcurrentHashMap<>();
+    configManager = LocalConfigNode.getInstance();
   }
 
   public StandAloneAutoIncDeviceID() {}
@@ -79,15 +91,19 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
    * @param deviceID StandAloneAutoIncDeviceID deviceID, like: "`1`"
    * @return standAloneAutoIncDeviceID
    */
+  // todo qurey/write
   private static StandAloneAutoIncDeviceID fromAutoIncDeviceID(String deviceID) {
     deviceID = deviceID.substring(1, deviceID.length() - 1);
-    int id = Integer.parseInt(deviceID);
+    long id = Long.parseLong(deviceID);
+    int schemaRegionId = (int) (id >>> 32);
+    int autoIncrementID = (int) id;
+    List<IDeviceID> deviceIDs = deviceIDsMap.get(schemaRegionId);
     synchronized (deviceIDs) {
-      return (StandAloneAutoIncDeviceID) deviceIDs.get(id);
+      return (StandAloneAutoIncDeviceID) deviceIDs.get(autoIncrementID);
     }
   }
 
-  // todo
+  // todo qurey
   private static StandAloneAutoIncDeviceID fromDevicePath(String devicePath) {
     try {
       // Use idtable to determine whether the device has been created
@@ -96,10 +112,16 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
       if (idTable.getDeviceEntry(deviceID) != null) {
         deviceID = (StandAloneAutoIncDeviceID) idTable.getDeviceEntry(deviceID).getDeviceID();
       } else {
-        deviceID.autoIncrementID = 0;
         // todo
-        if (deviceIDs.size() == 0) deviceIDs.add(0, deviceID);
-        else deviceIDs.set(0, deviceID);
+        deviceID.schemaRegionId = -1;
+        deviceID.autoIncrementID = 0;
+        List<IDeviceID> deviceIDs =
+            deviceIDsMap.computeIfAbsent(deviceID.schemaRegionId, integer -> new ArrayList<>());
+        // todo
+        synchronized (deviceIDs) {
+          if (deviceIDs.size() == 0) deviceIDs.add(deviceID.autoIncrementID, deviceID);
+          else deviceIDs.set(0, deviceID);
+        }
       }
       return deviceID;
     } catch (IllegalPathException e) {
@@ -111,22 +133,26 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
   // todo
   private static StandAloneAutoIncDeviceID buildDeviceID(String devicePath) {
     try {
+      PartialPath path = new PartialPath(devicePath);
+      // todo
       // Use idtable to determine whether the device has been created
-      IDTable idTable = IDTableManager.getInstance().getIDTable(new PartialPath(devicePath));
+      IDTable idTable = IDTableManager.getInstance().getIDTable(path);
       StandAloneAutoIncDeviceID deviceID = new StandAloneAutoIncDeviceID(devicePath);
       // this device is added for the first time
       if (idTable.getDeviceEntry(deviceID) == null) {
+        SchemaRegionId schemaRegionId = configManager.getBelongedSchemaRegionId(path);
+        deviceID.schemaRegionId = schemaRegionId.getId();
+        List<IDeviceID> deviceIDs =
+            deviceIDsMap.computeIfAbsent(deviceID.schemaRegionId, integer -> new ArrayList<>());
         synchronized (deviceIDs) {
-          // todo
-          if (deviceIDs.size() == 0) deviceIDs.add(0, null);
           deviceID.autoIncrementID = deviceIDs.size();
-          deviceIDs.add(deviceIDs.size(), deviceID);
+          deviceIDs.add(deviceID.autoIncrementID, deviceID);
         }
       } else {
         deviceID = (StandAloneAutoIncDeviceID) idTable.getDeviceEntry(deviceID).getDeviceID();
       }
       return deviceID;
-    } catch (IllegalPathException e) {
+    } catch (MetadataException e) {
       logger.error(e.getMessage());
       return null;
     }
@@ -156,6 +182,8 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
         + l3
         + ", l4="
         + l4
+        + ", schemaRegionId="
+        + schemaRegionId
         + ", autoIncrementID="
         + autoIncrementID
         + '}';
@@ -163,12 +191,15 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
 
   @Override
   public String toStringID() {
-    return "`" + autoIncrementID + '`';
+    long stringID = (long) schemaRegionId << 32;
+    stringID |= autoIncrementID;
+    return "`" + stringID + '`';
   }
 
   @Override
   public void serialize(ByteBuffer byteBuffer) {
     super.serialize(byteBuffer);
+    ReadWriteIOUtils.write(schemaRegionId, byteBuffer);
     ReadWriteIOUtils.write(autoIncrementID, byteBuffer);
   }
 
@@ -178,6 +209,7 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     autoIncrementDeviceID.l2 = ReadWriteIOUtils.readLong(byteBuffer);
     autoIncrementDeviceID.l3 = ReadWriteIOUtils.readLong(byteBuffer);
     autoIncrementDeviceID.l4 = ReadWriteIOUtils.readLong(byteBuffer);
+    autoIncrementDeviceID.schemaRegionId = ReadWriteIOUtils.readInt(byteBuffer);
     autoIncrementDeviceID.autoIncrementID = ReadWriteIOUtils.readInt(byteBuffer);
     return autoIncrementDeviceID;
   }
@@ -199,7 +231,11 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
   public void recover(String devicePath, String deviceID) {
     buildSHA256(devicePath);
     deviceID = deviceID.substring(1, deviceID.length() - 1);
-    this.autoIncrementID = Integer.parseInt(deviceID);
+    long id = Long.parseLong(deviceID);
+    this.schemaRegionId = (int) (id >>> 32);
+    this.autoIncrementID = (int) id;
+    List<IDeviceID> deviceIDs =
+        deviceIDsMap.computeIfAbsent(schemaRegionId, integer -> new ArrayList<>());
     // if there is out-of-order data, write the deviceID to the correct index of the array
     synchronized (deviceIDs) {
       if (autoIncrementID < deviceIDs.size() && deviceIDs.get(autoIncrementID) != null) return;
@@ -212,8 +248,6 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
 
   @TestOnly
   public static void reset() {
-    synchronized (deviceIDs) {
-      deviceIDs.clear();
-    }
+    deviceIDsMap.clear();
   }
 }

@@ -52,7 +52,11 @@ public class AppendOnlyDiskSchemaManagerTest {
 
   private AppendOnlyDiskSchemaManager appendOnlyDiskSchemaManager = null;
 
+  private AppendOnlyDiskSchemaManager appendOnlyDiskSchemaManager1 = null;
+
   private String storageGroupPath = "root.AppendOnlyDiskSchemaManagerTest";
+
+  private String storageGroupPath1 = "root.AppendOnlyDiskSchemaManagerTest2";
 
   @Before
   public void setUp() throws Exception {
@@ -65,6 +69,9 @@ public class AppendOnlyDiskSchemaManagerTest {
     appendOnlyDiskSchemaManager =
         new AppendOnlyDiskSchemaManager(
             SystemFileFactory.INSTANCE.getFile(systemDir + File.separator + storageGroupPath));
+    appendOnlyDiskSchemaManager1 =
+        new AppendOnlyDiskSchemaManager(
+            SystemFileFactory.INSTANCE.getFile(systemDir + File.separator + storageGroupPath1));
     EnvironmentUtils.envSetUp();
   }
 
@@ -77,6 +84,9 @@ public class AppendOnlyDiskSchemaManagerTest {
         .setDeviceIDTransformationMethod(originalDeviceIDTransformationMethod);
     appendOnlyDiskSchemaManager.close();
     appendOnlyDiskSchemaManager = null;
+    appendOnlyDiskSchemaManager1 = null;
+    storageGroupPath = null;
+    storageGroupPath1 = null;
   }
 
   public void serialize() {
@@ -95,15 +105,46 @@ public class AppendOnlyDiskSchemaManagerTest {
               false);
       appendOnlyDiskSchemaManager.serialize(schemaEntry);
     }
+
+    for (int i = 0; i < 10; i++) {
+      String devicePath = storageGroupPath1 + "." + "d" + i;
+      String measurement = "s";
+      String deviceID = DeviceIDFactory.getInstance().getAndSetDeviceID(devicePath).toStringID();
+      DiskSchemaEntry schemaEntry =
+          new DiskSchemaEntry(
+              deviceID,
+              devicePath + "." + measurement,
+              measurement,
+              Byte.parseByte("0"),
+              Byte.parseByte("0"),
+              Byte.parseByte("0"),
+              false);
+      appendOnlyDiskSchemaManager1.serialize(schemaEntry);
+    }
   }
 
   @Test
   public void recover() {
     serialize();
+    DeviceIDFactory.getInstance().reset();
     IDTable idTable = IDTableManager.getInstance().getIDTableDirectly(storageGroupPath);
     appendOnlyDiskSchemaManager.recover(idTable);
     for (int i = 0; i < 10; i++) {
       String devicePath = storageGroupPath + "." + "d" + i;
+      String measurement = "s";
+      IDeviceID deviceID = DeviceIDFactory.getInstance().getDeviceID(devicePath);
+      DeviceEntry deviceEntry = idTable.getDeviceEntry(deviceID.toStringID());
+      DeviceEntry deviceEntry1 = idTable.getDeviceEntry(deviceID);
+      assertNotNull(deviceEntry);
+      assertNotNull(deviceEntry1);
+      assertEquals(deviceEntry, deviceEntry1);
+      SchemaEntry schemaEntry = deviceEntry.getSchemaEntry(measurement);
+      assertNotNull(schemaEntry);
+    }
+    idTable = IDTableManager.getInstance().getIDTableDirectly(storageGroupPath1);
+    appendOnlyDiskSchemaManager1.recover(idTable);
+    for (int i = 0; i < 10; i++) {
+      String devicePath = storageGroupPath1 + "." + "d" + i;
       String measurement = "s";
       IDeviceID deviceID = DeviceIDFactory.getInstance().getDeviceID(devicePath);
       DeviceEntry deviceEntry = idTable.getDeviceEntry(deviceID.toStringID());

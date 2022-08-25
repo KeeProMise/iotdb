@@ -67,9 +67,9 @@ public class StandAloneAutoIncDeviceIDTest {
     IDeviceID deviceID3 = DeviceIDFactory.getInstance().getAndSetDeviceID("root.sg.x.d2");
     assertEquals(deviceID1.hashCode(), deviceID2.hashCode());
     assertNotEquals(deviceID1.hashCode(), deviceID3.hashCode());
-    IDeviceID deviceID4 = DeviceIDFactory.getInstance().getDeviceID("`1`");
-    IDeviceID deviceID5 = DeviceIDFactory.getInstance().getDeviceID("`1`");
-    IDeviceID deviceID6 = DeviceIDFactory.getInstance().getDeviceID("`2`");
+    IDeviceID deviceID4 = DeviceIDFactory.getInstance().getDeviceID("`0`");
+    IDeviceID deviceID5 = DeviceIDFactory.getInstance().getDeviceID("`0`");
+    IDeviceID deviceID6 = DeviceIDFactory.getInstance().getDeviceID("`1`");
     assertEquals(deviceID1.hashCode(), deviceID4.hashCode());
     assertEquals(deviceID1.hashCode(), deviceID5.hashCode());
     assertEquals(deviceID3.hashCode(), deviceID6.hashCode());
@@ -84,9 +84,9 @@ public class StandAloneAutoIncDeviceIDTest {
     assertEquals(deviceID1, deviceID2);
     assertNotEquals(deviceID1, deviceID3);
     assertNotEquals(deviceID1, sha256DeviceID);
-    IDeviceID deviceID4 = DeviceIDFactory.getInstance().getDeviceID("`1`");
-    IDeviceID deviceID5 = DeviceIDFactory.getInstance().getDeviceID("`1`");
-    IDeviceID deviceID6 = DeviceIDFactory.getInstance().getDeviceID("`2`");
+    IDeviceID deviceID4 = DeviceIDFactory.getInstance().getDeviceID("`0`");
+    IDeviceID deviceID5 = DeviceIDFactory.getInstance().getDeviceID("`0`");
+    IDeviceID deviceID6 = DeviceIDFactory.getInstance().getDeviceID("`1`");
     assertEquals(deviceID1, deviceID4);
     assertEquals(deviceID1, deviceID5);
     assertEquals(deviceID3, deviceID6);
@@ -95,9 +95,9 @@ public class StandAloneAutoIncDeviceIDTest {
   @Test
   public void testToStringID() {
     IDeviceID deviceID1 = DeviceIDFactory.getInstance().getAndSetDeviceID("root.sg.x.d1");
-    assertEquals(deviceID1.toStringID(), "`1`");
+    assertEquals(deviceID1.toStringID(), "`0`");
     IDeviceID deviceID2 = DeviceIDFactory.getInstance().getAndSetDeviceID("root.sg.x.d2");
-    assertEquals(deviceID2.toStringID(), "`2`");
+    assertEquals(deviceID2.toStringID(), "`1`");
   }
 
   @Test
@@ -115,14 +115,14 @@ public class StandAloneAutoIncDeviceIDTest {
   @Test
   public void testAutoIncrementDeviceID() {
     IDeviceID deviceID = DeviceIDFactory.getInstance().getAndSetDeviceID("root.sg.x.d1");
-    IDeviceID deviceID1 = DeviceIDFactory.getInstance().getDeviceID("`1`");
+    IDeviceID deviceID1 = DeviceIDFactory.getInstance().getDeviceID("`0`");
     assertEquals(deviceID, deviceID1);
     deviceID = DeviceIDFactory.getInstance().getAndSetDeviceID("root.sg.x.d2");
-    deviceID1 = DeviceIDFactory.getInstance().getDeviceID("`2`");
+    deviceID1 = DeviceIDFactory.getInstance().getDeviceID("`1`");
     assertEquals(deviceID, deviceID1);
     for (int i = 3; i < 10; i++) {
       deviceID = DeviceIDFactory.getInstance().getAndSetDeviceID("root.sg.x.d" + i);
-      deviceID1 = DeviceIDFactory.getInstance().getDeviceID("`" + i + "`");
+      deviceID1 = DeviceIDFactory.getInstance().getDeviceID("`" + (i - 1) + "`");
       assertEquals(deviceID, deviceID1);
     }
   }
