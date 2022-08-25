@@ -489,7 +489,7 @@ public class IDTableHashmapImpl implements IDTable {
    */
   private DeviceEntry getDeviceEntryWithAlignedCheck(String deviceName, boolean isAligned)
       throws MetadataException {
-    IDeviceID deviceID = DeviceIDFactory.getInstance().getAndSetDeviceID(deviceName);
+    IDeviceID deviceID = DeviceIDFactory.getInstance().getDeviceIDWithAutoCreate(deviceName);
     int slot = calculateSlot(deviceID);
 
     DeviceEntry deviceEntry = idTables[slot].get(deviceID);

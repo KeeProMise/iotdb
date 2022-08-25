@@ -37,23 +37,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/** Using auto-incrementing id as device id */
+/**
+ * Using auto-incrementing id as device id,A complete auto-increment id consists of schemaRegionID
+ * and autoIncrementID, where the upper 32 bits are schemaRegionID and the lower 32 bits are
+ * autoIncrementID
+ */
 public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatefulDeviceID {
 
   /** logger */
   private static Logger logger = LoggerFactory.getLogger(IDTable.class);
 
-  // todo
+  // stand-alone auto-increment id uses LocalConfigNode to obtain schemaRegionId
   private static LocalConfigNode configManager;
 
-  // using list to find the corresponding deviceID according to the ID
+  // using map to maintain the mapping from schemaRegionId to list<deviceID>, each list<deviceID>
+  // maintains the auto-increment id of the schemaRegion
   private static Map<Integer, List<IDeviceID>> deviceIDsMap;
 
-  // todo
+  // starting with 0,the maximum value is Integer.MAX_VALUE，if the schemaRegionId==-1 of a
+  // StandAloneAutoIncDeviceID instance object, it means that the device corresponding to the
+  // StandAloneAutoIncDeviceID instance does not exist
   int schemaRegionId;
 
-  // auto-incrementing id starting with 0
-  // todo
+  // starting with 0,the maximum value is Integer.MAX_VALUE
   int autoIncrementID;
 
   static {
@@ -67,8 +73,13 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     super(devicePath);
   }
 
-  // todo
-  public static StandAloneAutoIncDeviceID getAndSetDeviceID(String deviceID) {
+  /**
+   * get a StandAloneAutoIncDeviceID instance, create it if it doesn't exist
+   *
+   * @param deviceID device path for write/read operation, and device id for read operation
+   * @return a StandAloneAutoIncDeviceID instance
+   */
+  public static StandAloneAutoIncDeviceID getDeviceIDWithAutoCreate(String deviceID) {
     if (deviceID.startsWith("`") && deviceID.endsWith("`")) {
       return fromAutoIncDeviceID(deviceID);
     } else {
@@ -76,7 +87,14 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     }
   }
 
-  // todo
+  /**
+   * get a StandAloneAutoIncDeviceID instance, only for read operation
+   *
+   * @param deviceID device path or device id for read operation
+   * @return if the device exists, return a StandAloneAutoIncDeviceID instance, if it does not
+   *     exist,return a StandAloneAutoIncDeviceID instance,the object is guaranteed to be different
+   *     from the deviceID object of any device managed by the system (equals==false).
+   */
   public static StandAloneAutoIncDeviceID getDeviceID(String deviceID) {
     if (deviceID.startsWith("`") && deviceID.endsWith("`")) {
       return fromAutoIncDeviceID(deviceID);
