@@ -134,7 +134,6 @@ public interface IDTable {
 
   /** clear id table and close file */
   @TestOnly
-  // todo
   void clear() throws IOException;
 
   /**
@@ -172,13 +171,13 @@ public interface IDTable {
   /**
    * put schema entry to id table, currently used in recover
    *
-   * @param devicePath device path (can be device id formed path)
+   * @param deviceID deviceID
    * @param measurement measurement name
    * @param schemaEntry schema entry to put
    * @param isAligned is the device aligned
    */
   void putSchemaEntry(
-      String devicePath, String measurement, SchemaEntry schemaEntry, boolean isAligned)
+      String deviceID, String measurement, SchemaEntry schemaEntry, boolean isAligned)
       throws MetadataException;
 
   /**

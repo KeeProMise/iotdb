@@ -129,7 +129,6 @@ public class IDTableManager {
 
   /** clear id table map */
   @TestOnly
-  // todo
   public void clear() throws IOException {
     for (IDTable idTable : idTableMap.values()) {
       idTable.clear();

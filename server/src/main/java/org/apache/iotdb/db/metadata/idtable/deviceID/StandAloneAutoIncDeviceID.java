@@ -76,7 +76,7 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
   /**
    * get a StandAloneAutoIncDeviceID instance, create it if it doesn't exist
    *
-   * @param deviceID device path for write/read operation, and device id for read operation
+   * @param deviceID device path for insert/query, and device id for query
    * @return a StandAloneAutoIncDeviceID instance
    */
   public static StandAloneAutoIncDeviceID getDeviceIDWithAutoCreate(String deviceID) {
@@ -88,9 +88,9 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
   }
 
   /**
-   * get a StandAloneAutoIncDeviceID instance, only for read operation
+   * get a StandAloneAutoIncDeviceID instance, only for query
    *
-   * @param deviceID device path or device id for read operation
+   * @param deviceID device path or device id for query
    * @return if the device exists, return a StandAloneAutoIncDeviceID instance, if it does not
    *     exist,return a StandAloneAutoIncDeviceID instance,the object is guaranteed to be different
    *     from the deviceID object of any device managed by the system (equals==false).
@@ -107,9 +107,8 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
    * get device id from a standAloneAutoIncDeviceID
    *
    * @param deviceID StandAloneAutoIncDeviceID deviceID, like: "`1`"
-   * @return standAloneAutoIncDeviceID
+   * @return a standAloneAutoIncDeviceID instance
    */
-  // todo qurey/write
   private static StandAloneAutoIncDeviceID fromAutoIncDeviceID(String deviceID) {
     deviceID = deviceID.substring(1, deviceID.length() - 1);
     long id = Long.parseLong(deviceID);
@@ -121,21 +120,30 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     }
   }
 
-  // todo qurey
+  /**
+   * get device id from a device path
+   *
+   * @param devicePath device path, like: "root.sg.x.d1"
+   * @return a standAloneAutoIncDeviceID instance
+   */
   private static StandAloneAutoIncDeviceID fromDevicePath(String devicePath) {
     try {
-      // Use idtable to determine whether the device has been created
+      // use idTable to determine whether the device has been created
       IDTable idTable = IDTableManager.getInstance().getIDTable(new PartialPath(devicePath));
       StandAloneAutoIncDeviceID deviceID = new StandAloneAutoIncDeviceID(devicePath);
       if (idTable.getDeviceEntry(deviceID) != null) {
         deviceID = (StandAloneAutoIncDeviceID) idTable.getDeviceEntry(deviceID).getDeviceID();
       } else {
-        // todo
+        // for the query path of a non-existing device, a deviceID with schemaRegion = -1 and
+        // autoIncrementID = 0 will be generated, and then stored in the deviceIDsMap.
+        // although it seems that all non-existing devicePaths will be converted into
+        // StandAloneAutoIncDeviceID objects with the same member variable value, but due to the
+        // equality of StandAloneAutoIncDeviceID objects is determined by the sha256 hash value, so
+        // there is no adverse effect
         deviceID.schemaRegionId = -1;
         deviceID.autoIncrementID = 0;
         List<IDeviceID> deviceIDs =
             deviceIDsMap.computeIfAbsent(deviceID.schemaRegionId, integer -> new ArrayList<>());
-        // todo
         synchronized (deviceIDs) {
           if (deviceIDs.size() == 0) deviceIDs.add(deviceID.autoIncrementID, deviceID);
           else deviceIDs.set(0, deviceID);
@@ -148,12 +156,17 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     }
   }
 
-  // todo
+  /**
+   * get device id from a device path, if the device represented by the path does not exist, a
+   * StandAloneAutoIncDeviceID instance is generated for the path
+   *
+   * @param devicePath device path, like: "root.sg.x.d1"
+   * @return a standAloneAutoIncDeviceID instance
+   */
   private static StandAloneAutoIncDeviceID buildDeviceID(String devicePath) {
     try {
       PartialPath path = new PartialPath(devicePath);
-      // todo
-      // Use idtable to determine whether the device has been created
+      // use idTable to determine whether the device has been created
       IDTable idTable = IDTableManager.getInstance().getIDTable(path);
       StandAloneAutoIncDeviceID deviceID = new StandAloneAutoIncDeviceID(devicePath);
       // this device is added for the first time
@@ -232,18 +245,11 @@ public class StandAloneAutoIncDeviceID extends SHA256DeviceID implements IStatef
     return autoIncrementDeviceID;
   }
 
-  private void parseAutoIncrementDeviceID(SHA256DeviceID sha256DeviceID) {
-    this.l1 = sha256DeviceID.l1;
-    this.l2 = sha256DeviceID.l2;
-    this.l3 = sha256DeviceID.l3;
-    this.l4 = sha256DeviceID.l4;
-  }
-
   /**
-   * write device id to the static variable deviceIDs
+   * recover deviceIDsMap
    *
-   * @param devicePath device path of the time series
-   * @param deviceID device id
+   * @param devicePath device path of the time series, like: "root.sg.x.d1"
+   * @param deviceID device id, like: "`1`"
    */
   @Override
   public void recover(String devicePath, String deviceID) {

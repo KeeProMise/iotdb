@@ -310,7 +310,6 @@ public class IDTableHashmapImpl implements IDTable {
 
   @Override
   @TestOnly
-  // todo
   public void clear() throws IOException {
     if (IDiskSchemaManager != null) {
       IDiskSchemaManager.close();
@@ -387,18 +386,17 @@ public class IDTableHashmapImpl implements IDTable {
   /**
    * put schema entry to id table, currently used in recover
    *
-   * @param devicePath device path (cannot be device id formed path)
+   * @param deviceID device id
    * @param measurement measurement name
    * @param schemaEntry schema entry to put
    * @param isAligned is the device aligned
    * @throws MetadataException
    */
   @Override
-  // todo
   public void putSchemaEntry(
-      String devicePath, String measurement, SchemaEntry schemaEntry, boolean isAligned)
+      String deviceID, String measurement, SchemaEntry schemaEntry, boolean isAligned)
       throws MetadataException {
-    DeviceEntry deviceEntry = getDeviceEntryWithAlignedCheck(devicePath, isAligned);
+    DeviceEntry deviceEntry = getDeviceEntryWithAlignedCheck(deviceID, isAligned);
     deviceEntry.putSchemaEntry(measurement, schemaEntry);
   }
 
