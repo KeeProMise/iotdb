@@ -142,17 +142,17 @@ public class QueryAlignedTimeseriesWithIDTableTest {
         IoTDBDescriptor.getInstance().getConfig().getDeviceIDTransformationMethod();
 
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(true);
-    IoTDBDescriptor.getInstance().getConfig().setDeviceIDTransformationMethod("SHA256");
+    IoTDBDescriptor.getInstance().getConfig().setDeviceIDTransformationMethod("AutoIncrement_INT");
     EnvironmentUtils.envSetUp();
   }
 
   @After
   public void clean() throws IOException, StorageEngineException {
+    EnvironmentUtils.cleanEnv();
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(isEnableIDTable);
     IoTDBDescriptor.getInstance()
         .getConfig()
         .setDeviceIDTransformationMethod(originalDeviceIDTransformationMethod);
-    EnvironmentUtils.cleanEnv();
   }
 
   @Test
