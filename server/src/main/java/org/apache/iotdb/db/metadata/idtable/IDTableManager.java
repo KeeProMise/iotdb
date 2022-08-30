@@ -21,8 +21,10 @@ package org.apache.iotdb.db.metadata.idtable;
 import org.apache.iotdb.commons.exception.MetadataException;
 import org.apache.iotdb.commons.file.SystemFileFactory;
 import org.apache.iotdb.commons.path.PartialPath;
+import org.apache.iotdb.commons.utils.TestOnly;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
 import org.apache.iotdb.db.exception.metadata.PathNotExistException;
+import org.apache.iotdb.db.metadata.idtable.deviceID.DeviceIDMode;
 import org.apache.iotdb.db.service.IoTDB;
 import org.apache.iotdb.tsfile.utils.FilePathUtils;
 import org.apache.iotdb.tsfile.write.schema.IMeasurementSchema;
@@ -82,10 +84,19 @@ public class IDTableManager {
     try {
       return idTableMap.computeIfAbsent(
           IoTDB.schemaProcessor.getStorageGroupNodeByPath(devicePath).getFullPath(),
-          storageGroupPath ->
-              new IDTableHashmapImpl(
-                  SystemFileFactory.INSTANCE.getFile(
-                      systemDir + File.separator + storageGroupPath)));
+          storageGroupPath -> {
+            switch (DeviceIDMode.valueOf(
+                IoTDBDescriptor.getInstance().getConfig().getDeviceIDTransformationMethod())) {
+              case AutoIncrement:
+                return new IDTableAutoIncImpl(
+                    SystemFileFactory.INSTANCE.getFile(
+                        systemDir + File.separator + storageGroupPath));
+              default:
+                return new IDTableHashmapImpl(
+                    SystemFileFactory.INSTANCE.getFile(
+                        systemDir + File.separator + storageGroupPath));
+            }
+          });
     } catch (MetadataException e) {
       logger.error("get id table failed, path is: " + devicePath + ". caused by: " + e);
     }
@@ -102,9 +113,19 @@ public class IDTableManager {
   public synchronized IDTable getIDTableDirectly(String sgPath) {
     return idTableMap.computeIfAbsent(
         sgPath,
-        storageGroupPath ->
-            new IDTableHashmapImpl(
-                SystemFileFactory.INSTANCE.getFile(systemDir + File.separator + storageGroupPath)));
+        storageGroupPath -> {
+          switch (DeviceIDMode.valueOf(
+              IoTDBDescriptor.getInstance().getConfig().getDeviceIDTransformationMethod())) {
+            case AutoIncrement:
+              return new IDTableAutoIncImpl(
+                  SystemFileFactory.INSTANCE.getFile(
+                      systemDir + File.separator + storageGroupPath));
+            default:
+              return new IDTableHashmapImpl(
+                  SystemFileFactory.INSTANCE.getFile(
+                      systemDir + File.separator + storageGroupPath));
+          }
+        });
   }
 
   /**
@@ -127,11 +148,11 @@ public class IDTableManager {
   }
 
   /** clear id table map */
+  @TestOnly
   public void clear() throws IOException {
     for (IDTable idTable : idTableMap.values()) {
       idTable.clear();
     }
-
     idTableMap.clear();
   }
 }

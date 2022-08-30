@@ -16,20 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.iotdb.db.metadata.idtable.deviceID;
 
-package org.apache.iotdb.db.metadata.idtable.entry;
-
-import java.nio.ByteBuffer;
-
-/** device id interface */
-public interface IDeviceID {
-
-  /**
-   * to string format
-   *
-   * @return string format device id
-   */
-  public String toStringID();
-
-  public void serialize(ByteBuffer byteBuffer);
+public enum DeviceIDMode {
+  Plain,
+  SHA256,
+  AutoIncrement
 }

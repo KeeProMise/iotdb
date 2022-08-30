@@ -66,26 +66,51 @@ public class IDTableRestartTest {
     isEnableIDTableLogFile = IoTDBDescriptor.getInstance().getConfig().isEnableIDTableLogFile();
 
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(true);
-    IoTDBDescriptor.getInstance().getConfig().setDeviceIDTransformationMethod("SHA256");
+    IoTDBDescriptor.getInstance().getConfig().setDeviceIDTransformationMethod("AutoIncrement");
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTableLogFile(true);
     EnvironmentUtils.envSetUp();
   }
 
   @After
   public void clean() throws IOException, StorageEngineException {
+    EnvironmentUtils.cleanEnv();
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(isEnableIDTable);
     IoTDBDescriptor.getInstance()
         .getConfig()
         .setDeviceIDTransformationMethod(originalDeviceIDTransformationMethod);
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTableLogFile(isEnableIDTableLogFile);
-
-    EnvironmentUtils.cleanEnv();
   }
 
   @Test
   public void testRawDataQueryAfterRestart() throws Exception {
-    insertDataInMemoryWithTablet();
-    insertDataInMemoryWithRecord();
+    String path1 = "root.isp1.d1";
+    String path2 = "root.isp2.d1";
+    insertDataInMemoryWithTablet(path1);
+    insertDataInMemoryWithTablet(path2);
+    insertDataInMemoryWithRecord(path1);
+    insertDataInMemoryWithRecord(path2);
+
+    PlanExecutor executor = new PlanExecutor();
+    QueryPlan queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select * from " + path1);
+    QueryDataSet dataSet = executor.processQuery(queryPlan, EnvironmentUtils.TEST_QUERY_CONTEXT);
+    Assert.assertEquals(6, dataSet.getPaths().size());
+    int count = 0;
+    while (dataSet.hasNext()) {
+      RowRecord record = dataSet.next();
+      System.out.println(record);
+      count++;
+    }
+
+    executor = new PlanExecutor();
+    queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select * from " + path2);
+    dataSet = executor.processQuery(queryPlan, EnvironmentUtils.TEST_QUERY_CONTEXT);
+    Assert.assertEquals(6, dataSet.getPaths().size());
+    count = 0;
+    while (dataSet.hasNext()) {
+      RowRecord record = dataSet.next();
+      System.out.println(record);
+      count++;
+    }
 
     // restart
     try {
@@ -94,11 +119,24 @@ public class IDTableRestartTest {
       Assert.fail();
     }
 
-    PlanExecutor executor = new PlanExecutor();
-    QueryPlan queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select * from root.isp.d1");
-    QueryDataSet dataSet = executor.processQuery(queryPlan, EnvironmentUtils.TEST_QUERY_CONTEXT);
+    executor = new PlanExecutor();
+    queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select * from " + path1);
+    dataSet = executor.processQuery(queryPlan, EnvironmentUtils.TEST_QUERY_CONTEXT);
     Assert.assertEquals(6, dataSet.getPaths().size());
-    int count = 0;
+    count = 0;
+    while (dataSet.hasNext()) {
+      RowRecord record = dataSet.next();
+      System.out.println(record);
+      count++;
+    }
+
+    assertEquals(5, count);
+
+    executor = new PlanExecutor();
+    queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select * from " + path2);
+    dataSet = executor.processQuery(queryPlan, EnvironmentUtils.TEST_QUERY_CONTEXT);
+    Assert.assertEquals(6, dataSet.getPaths().size());
+    count = 0;
     while (dataSet.hasNext()) {
       RowRecord record = dataSet.next();
       System.out.println(record);
@@ -116,9 +154,21 @@ public class IDTableRestartTest {
     } catch (Exception e) {
       Assert.fail();
     }
+    executor = new PlanExecutor();
+    queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select * from " + path1);
+    dataSet = executor.processQuery(queryPlan, EnvironmentUtils.TEST_QUERY_CONTEXT);
+    Assert.assertEquals(6, dataSet.getPaths().size());
+    count = 0;
+    while (dataSet.hasNext()) {
+      RowRecord record = dataSet.next();
+      System.out.println(record);
+      count++;
+    }
+
+    assertEquals(5, count);
 
     executor = new PlanExecutor();
-    queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select * from root.isp.d1");
+    queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select * from " + path2);
     dataSet = executor.processQuery(queryPlan, EnvironmentUtils.TEST_QUERY_CONTEXT);
     Assert.assertEquals(6, dataSet.getPaths().size());
     count = 0;
@@ -131,7 +181,8 @@ public class IDTableRestartTest {
     assertEquals(5, count);
   }
 
-  private void insertDataInMemoryWithRecord() throws IllegalPathException, QueryProcessException {
+  private void insertDataInMemoryWithRecord(String path)
+      throws IllegalPathException, QueryProcessException {
     long time = 100L;
     TSDataType[] dataTypes =
         new TSDataType[] {
@@ -149,11 +200,11 @@ public class IDTableRestartTest {
     columns[2] = 10000 + "";
     columns[3] = 100 + "";
     columns[4] = false + "";
-    columns[5] = "hh" + 0;
+    columns[5] = path;
 
     InsertRowPlan insertRowPlan =
         new InsertRowPlan(
-            new PartialPath("root.isp.d1"),
+            new PartialPath(path),
             time,
             new String[] {"s1", "s2", "s3", "s4", "s5", "s6"},
             dataTypes,
@@ -163,7 +214,8 @@ public class IDTableRestartTest {
     executor.insert(insertRowPlan);
   }
 
-  private void insertDataInMemoryWithTablet() throws IllegalPathException, QueryProcessException {
+  private void insertDataInMemoryWithTablet(String path)
+      throws IllegalPathException, QueryProcessException {
     long[] times = new long[] {110L, 111L, 112L, 113L};
     List<Integer> dataTypes = new ArrayList<>();
     dataTypes.add(TSDataType.DOUBLE.ordinal());
@@ -187,14 +239,12 @@ public class IDTableRestartTest {
       ((long[]) columns[2])[r] = 100000 + r;
       ((int[]) columns[3])[r] = 1000 + r;
       ((boolean[]) columns[4])[r] = false;
-      ((Binary[]) columns[5])[r] = new Binary("mm" + r);
+      ((Binary[]) columns[5])[r] = new Binary(path);
     }
 
     InsertTabletPlan tabletPlan =
         new InsertTabletPlan(
-            new PartialPath("root.isp.d1"),
-            new String[] {"s1", "s2", "s3", "s4", "s5", "s6"},
-            dataTypes);
+            new PartialPath(path), new String[] {"s1", "s2", "s3", "s4", "s5", "s6"}, dataTypes);
     tabletPlan.setTimes(times);
     tabletPlan.setColumns(columns);
     tabletPlan.setRowCount(times.length);

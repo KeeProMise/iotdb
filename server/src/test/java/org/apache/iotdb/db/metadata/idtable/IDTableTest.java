@@ -27,9 +27,9 @@ import org.apache.iotdb.db.exception.StorageEngineException;
 import org.apache.iotdb.db.exception.metadata.DataTypeMismatchException;
 import org.apache.iotdb.db.exception.query.QueryProcessException;
 import org.apache.iotdb.db.metadata.LocalSchemaProcessor;
-import org.apache.iotdb.db.metadata.idtable.entry.DeviceIDFactory;
+import org.apache.iotdb.db.metadata.idtable.deviceID.DeviceIDFactory;
+import org.apache.iotdb.db.metadata.idtable.deviceID.IDeviceID;
 import org.apache.iotdb.db.metadata.idtable.entry.DiskSchemaEntry;
-import org.apache.iotdb.db.metadata.idtable.entry.IDeviceID;
 import org.apache.iotdb.db.metadata.idtable.entry.SchemaEntry;
 import org.apache.iotdb.db.metadata.lastCache.container.ILastCacheContainer;
 import org.apache.iotdb.db.metadata.mnode.IMeasurementMNode;
@@ -88,19 +88,19 @@ public class IDTableTest {
     isEnableIDTableLogFile = IoTDBDescriptor.getInstance().getConfig().isEnableIDTableLogFile();
 
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(true);
-    IoTDBDescriptor.getInstance().getConfig().setDeviceIDTransformationMethod("SHA256");
+    IoTDBDescriptor.getInstance().getConfig().setDeviceIDTransformationMethod("AutoIncrement");
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTableLogFile(true);
     EnvironmentUtils.envSetUp();
   }
 
   @After
   public void clean() throws IOException, StorageEngineException {
+    EnvironmentUtils.cleanEnv();
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(isEnableIDTable);
     IoTDBDescriptor.getInstance()
         .getConfig()
         .setDeviceIDTransformationMethod(originalDeviceIDTransformationMethod);
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTableLogFile(isEnableIDTableLogFile);
-    EnvironmentUtils.cleanEnv();
   }
 
   @Test
@@ -617,6 +617,7 @@ public class IDTableTest {
         IDeviceID iDeviceID = DeviceIDFactory.getInstance().getDeviceID(devicePath);
         String measurement = "s" + i;
         idTable.putSchemaEntry(
+            iDeviceID.toStringID(),
             devicePath,
             measurement,
             new SchemaEntry(
@@ -661,7 +662,7 @@ public class IDTableTest {
                 new PartialPath(devicePath + "." + measurement),
                 false,
                 idTable.getIDiskSchemaManager());
-        idTable.putSchemaEntry(devicePath, measurement, schemaEntry, false);
+        idTable.putSchemaEntry(iDeviceID.toStringID(), devicePath, measurement, schemaEntry, false);
       }
       List<PartialPath> partialPaths = new ArrayList<>();
       partialPaths.add(new PartialPath("root.laptop.d0.s0"));

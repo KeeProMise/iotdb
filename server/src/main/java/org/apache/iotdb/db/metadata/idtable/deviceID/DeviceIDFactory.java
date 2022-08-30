@@ -17,11 +17,12 @@
  * under the License.
  */
 
-package org.apache.iotdb.db.metadata.idtable.entry;
+package org.apache.iotdb.db.metadata.idtable.deviceID;
 
 import org.apache.iotdb.commons.path.PartialPath;
 import org.apache.iotdb.commons.utils.TestOnly;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
+import org.apache.iotdb.db.metadata.idtable.IDTableAutoIncImpl;
 
 import java.util.function.Function;
 
@@ -49,15 +50,21 @@ public class DeviceIDFactory {
   }
 
   private DeviceIDFactory() {
-    if (IoTDBDescriptor.getInstance().getConfig().isEnableIDTable()
-        && IoTDBDescriptor.getInstance()
-            .getConfig()
-            .getDeviceIDTransformationMethod()
-            .equals("SHA256")) {
-      getDeviceIDFunction = SHA256DeviceID::new;
-    } else {
-      getDeviceIDFunction = PlainDeviceID::new;
+    if (IoTDBDescriptor.getInstance().getConfig().isEnableIDTable()) {
+      switch (DeviceIDMode.valueOf(
+          IoTDBDescriptor.getInstance().getConfig().getDeviceIDTransformationMethod())) {
+        case SHA256:
+          getDeviceIDFunction = SHA256DeviceID::new;
+          return;
+        case AutoIncrement:
+          getDeviceIDFunction = IDTableAutoIncImpl::getDeviceID;
+          return;
+        default:
+          getDeviceIDFunction = PlainDeviceID::new;
+          return;
+      }
     }
+    getDeviceIDFunction = PlainDeviceID::new;
   }
   // endregion
 
@@ -65,7 +72,7 @@ public class DeviceIDFactory {
    * get device id by full path
    *
    * @param devicePath device path of the timeseries
-   * @return device id of the timeseries
+   * @return a IDeviceID instance of the device path
    */
   public IDeviceID getDeviceID(PartialPath devicePath) {
     return getDeviceIDFunction.apply(devicePath.toString());
@@ -75,7 +82,7 @@ public class DeviceIDFactory {
    * get device id by full path
    *
    * @param devicePath device path of the timeseries
-   * @return device id of the timeseries
+   * @return a IDeviceID instance of the device path
    */
   public IDeviceID getDeviceID(String devicePath) {
     return getDeviceIDFunction.apply(devicePath);
@@ -84,14 +91,21 @@ public class DeviceIDFactory {
   /** reset id method */
   @TestOnly
   public void reset() {
-    if (IoTDBDescriptor.getInstance().getConfig().isEnableIDTable()
-        && IoTDBDescriptor.getInstance()
-            .getConfig()
-            .getDeviceIDTransformationMethod()
-            .equals("SHA256")) {
-      getDeviceIDFunction = SHA256DeviceID::new;
-    } else {
-      getDeviceIDFunction = PlainDeviceID::new;
+    if (IoTDBDescriptor.getInstance().getConfig().isEnableIDTable()) {
+      switch (DeviceIDMode.valueOf(
+          IoTDBDescriptor.getInstance().getConfig().getDeviceIDTransformationMethod())) {
+        case SHA256:
+          getDeviceIDFunction = SHA256DeviceID::new;
+          return;
+        case AutoIncrement:
+          getDeviceIDFunction = IDTableAutoIncImpl::getDeviceID;
+          IDTableAutoIncImpl.reset();
+          return;
+        default:
+          getDeviceIDFunction = PlainDeviceID::new;
+          return;
+      }
     }
+    getDeviceIDFunction = PlainDeviceID::new;
   }
 }

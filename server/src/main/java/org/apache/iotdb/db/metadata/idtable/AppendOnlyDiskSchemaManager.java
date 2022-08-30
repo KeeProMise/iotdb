@@ -21,7 +21,7 @@ package org.apache.iotdb.db.metadata.idtable;
 
 import org.apache.iotdb.commons.exception.MetadataException;
 import org.apache.iotdb.commons.utils.TestOnly;
-import org.apache.iotdb.db.metadata.idtable.entry.DeviceIDFactory;
+import org.apache.iotdb.db.metadata.idtable.deviceID.DeviceIDFactory;
 import org.apache.iotdb.db.metadata.idtable.entry.DiskSchemaEntry;
 import org.apache.iotdb.db.metadata.idtable.entry.SchemaEntry;
 import org.apache.iotdb.tsfile.file.metadata.enums.CompressionType;
@@ -148,7 +148,6 @@ public class AppendOnlyDiskSchemaManager implements IDiskSchemaManager {
     try (FileInputStream inputStream = new FileInputStream(dataFile)) {
       // read file version
       ReadWriteIOUtils.readString(inputStream);
-
       while (inputStream.available() > 0) {
         DiskSchemaEntry cur = DiskSchemaEntry.deserialize(inputStream);
         if (!cur.deviceID.equals(DiskSchemaEntry.TOMBSTONE)) {
@@ -158,7 +157,12 @@ public class AppendOnlyDiskSchemaManager implements IDiskSchemaManager {
                   TSEncoding.deserialize(cur.encoding),
                   CompressionType.deserialize(cur.compressor),
                   loc);
-          idTable.putSchemaEntry(cur.deviceID, cur.measurementName, schemaEntry, cur.isAligned);
+          idTable.putSchemaEntry(
+              cur.deviceID,
+              getDevicePathFromSeriesKey(cur.seriesKey, cur.measurementName),
+              cur.measurementName,
+              schemaEntry,
+              cur.isAligned);
         }
         loc += cur.entrySize;
       }
@@ -248,7 +252,7 @@ public class AppendOnlyDiskSchemaManager implements IDiskSchemaManager {
     String measurementName = readString();
     String deviceID =
         DeviceIDFactory.getInstance()
-            .getDeviceID(seriesKey.substring(0, seriesKey.length() - measurementName.length() - 1))
+            .getDeviceID(getDevicePathFromSeriesKey(seriesKey, measurementName))
             .toStringID();
     return new DiskSchemaEntry(
         deviceID,
@@ -265,6 +269,10 @@ public class AppendOnlyDiskSchemaManager implements IDiskSchemaManager {
     byte[] bytes = new byte[strLength];
     randomAccessFile.read(bytes, 0, strLength);
     return new String(bytes, 0, strLength);
+  }
+
+  private String getDevicePathFromSeriesKey(String seriesKey, String measurement) {
+    return seriesKey.substring(0, seriesKey.length() - measurement.length() - 1);
   }
 
   @Override

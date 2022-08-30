@@ -75,17 +75,17 @@ public class InsertWithIDTableTest {
         IoTDBDescriptor.getInstance().getConfig().getDeviceIDTransformationMethod();
 
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(true);
-    IoTDBDescriptor.getInstance().getConfig().setDeviceIDTransformationMethod("SHA256");
+    IoTDBDescriptor.getInstance().getConfig().setDeviceIDTransformationMethod("AutoIncrement");
     EnvironmentUtils.envSetUp();
   }
 
   @After
   public void clean() throws IOException, StorageEngineException {
+    EnvironmentUtils.cleanEnv();
     IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(isEnableIDTable);
     IoTDBDescriptor.getInstance()
         .getConfig()
         .setDeviceIDTransformationMethod(originalDeviceIDTransformationMethod);
-    EnvironmentUtils.cleanEnv();
   }
 
   @Test
@@ -755,5 +755,10 @@ public class InsertWithIDTableTest {
       RowRecord record = dataSet.next();
       assertEquals(60, record.getFields().size());
     }
+
+    // query for records that do not exist
+    queryPlan = (QueryPlan) processor.parseSQLToPhysicalPlan("select * from root.multi.d11");
+    dataSet = executor.processQuery(queryPlan, EnvironmentUtils.TEST_QUERY_CONTEXT);
+    assertEquals(0, dataSet.getPaths().size());
   }
 }

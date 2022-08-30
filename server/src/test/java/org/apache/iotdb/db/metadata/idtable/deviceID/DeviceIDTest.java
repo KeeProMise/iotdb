@@ -17,17 +17,45 @@
  * under the License.
  */
 
-package org.apache.iotdb.db.metadata.idtable.entry;
+package org.apache.iotdb.db.metadata.idtable.deviceID;
 
 import org.apache.iotdb.commons.exception.IllegalPathException;
 import org.apache.iotdb.commons.path.PartialPath;
+import org.apache.iotdb.db.conf.IoTDBDescriptor;
+import org.apache.iotdb.db.utils.EnvironmentUtils;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 public class DeviceIDTest {
+
+  private boolean isEnableIDTable = false;
+
+  private String originalDeviceIDTransformationMethod = null;
+
+  @Before
+  public void setUp() throws Exception {
+    isEnableIDTable = IoTDBDescriptor.getInstance().getConfig().isEnableIDTable();
+    originalDeviceIDTransformationMethod =
+        IoTDBDescriptor.getInstance().getConfig().getDeviceIDTransformationMethod();
+    IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(true);
+    IoTDBDescriptor.getInstance().getConfig().setDeviceIDTransformationMethod("SHA256");
+    EnvironmentUtils.envSetUp();
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    EnvironmentUtils.cleanEnv();
+    IoTDBDescriptor.getInstance().getConfig().setEnableIDTable(isEnableIDTable);
+    IoTDBDescriptor.getInstance()
+        .getConfig()
+        .setDeviceIDTransformationMethod(originalDeviceIDTransformationMethod);
+  }
+
   @Test
   public void deviceIDBuildTest() throws IllegalPathException {
     PartialPath partialPath1 = new PartialPath("root.sg1.d1.s1");

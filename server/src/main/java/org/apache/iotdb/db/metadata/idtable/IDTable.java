@@ -24,10 +24,10 @@ import org.apache.iotdb.commons.path.PartialPath;
 import org.apache.iotdb.commons.utils.TestOnly;
 import org.apache.iotdb.db.conf.IoTDBConfig;
 import org.apache.iotdb.db.conf.IoTDBDescriptor;
+import org.apache.iotdb.db.metadata.idtable.deviceID.DeviceIDFactory;
+import org.apache.iotdb.db.metadata.idtable.deviceID.IDeviceID;
 import org.apache.iotdb.db.metadata.idtable.entry.DeviceEntry;
-import org.apache.iotdb.db.metadata.idtable.entry.DeviceIDFactory;
 import org.apache.iotdb.db.metadata.idtable.entry.DiskSchemaEntry;
-import org.apache.iotdb.db.metadata.idtable.entry.IDeviceID;
 import org.apache.iotdb.db.metadata.idtable.entry.SchemaEntry;
 import org.apache.iotdb.db.metadata.idtable.entry.TimeseriesID;
 import org.apache.iotdb.db.metadata.mnode.IMeasurementMNode;
@@ -133,6 +133,7 @@ public interface IDTable {
       throws MetadataException;
 
   /** clear id table and close file */
+  @TestOnly
   void clear() throws IOException;
 
   /**
@@ -142,6 +143,14 @@ public interface IDTable {
    * @return device entry of the timeseries
    */
   DeviceEntry getDeviceEntry(String deviceName);
+
+  /**
+   * get device entry from device id
+   *
+   * @param deviceID device id of the device path
+   * @return device entry
+   */
+  DeviceEntry getDeviceEntry(IDeviceID deviceID);
 
   /**
    * get schema from device and measurements
@@ -162,13 +171,19 @@ public interface IDTable {
   /**
    * put schema entry to id table, currently used in recover
    *
-   * @param devicePath device path (can be device id formed path)
+   * @param deviceID device id
+   * @param devicePath device path
    * @param measurement measurement name
    * @param schemaEntry schema entry to put
    * @param isAligned is the device aligned
+   * @throws MetadataException
    */
   void putSchemaEntry(
-      String devicePath, String measurement, SchemaEntry schemaEntry, boolean isAligned)
+      String deviceID,
+      String devicePath,
+      String measurement,
+      SchemaEntry schemaEntry,
+      boolean isAligned)
       throws MetadataException;
 
   /**
