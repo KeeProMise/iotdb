@@ -839,6 +839,8 @@ public class IoTDBConfig {
    */
   private boolean enableIDTableLogFile = false;
 
+  private int numOfDeviceIdsInMemTable = 65536;
+
   /** whether to use persistent schema mode */
   private String schemaEngineMode = "Memory";
 
@@ -2749,6 +2751,14 @@ public class IoTDBConfig {
 
   public void setEnableIDTableLogFile(boolean enableIDTableLogFile) {
     this.enableIDTableLogFile = enableIDTableLogFile;
+  }
+
+  public int getNumOfDeviceIdsInMemTable() {
+    return numOfDeviceIdsInMemTable;
+  }
+
+  public void setNumOfDeviceIdsInMemTable(int numOfDeviceIdsInMemTable) {
+    this.numOfDeviceIdsInMemTable = numOfDeviceIdsInMemTable;
   }
 
   public String getSchemaEngineMode() {
