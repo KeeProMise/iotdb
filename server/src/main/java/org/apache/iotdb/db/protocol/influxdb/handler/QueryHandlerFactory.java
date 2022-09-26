@@ -16,12 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.iotdb.db.protocol.influxdb.handler;
 
-package org.apache.iotdb.db.metadata.schemaregion;
+import org.apache.iotdb.db.conf.IoTDBDescriptor;
+import org.apache.iotdb.db.metadata.schemaregion.SchemaEngineMode;
+import org.apache.iotdb.db.service.thrift.impl.ClientRPCServiceImpl;
 
-public enum SchemaEngineMode {
-  Memory,
-  Schema_File,
-  Rocksdb_based,
-  Tag
+public class QueryHandlerFactory {
+  public static AbstractQueryHandler getInstance() {
+    if (IoTDBDescriptor.getInstance()
+        .getConfig()
+        .getRpcImplClassName()
+        .equals(ClientRPCServiceImpl.class.getName())) {
+      switch (SchemaEngineMode.valueOf(
+          IoTDBDescriptor.getInstance().getConfig().getSchemaEngineMode())) {
+        case Tag:
+          return new TagQueryHandler();
+        default:
+          return new NewQueryHandler();
+      }
+    } else {
+      return new QueryHandler();
+    }
+  }
 }

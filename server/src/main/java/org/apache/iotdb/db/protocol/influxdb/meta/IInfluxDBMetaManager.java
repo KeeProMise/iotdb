@@ -16,12 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.iotdb.db.protocol.influxdb.meta;
 
-package org.apache.iotdb.db.metadata.schemaregion;
+import java.util.Map;
+import java.util.Set;
 
-public enum SchemaEngineMode {
-  Memory,
-  Schema_File,
-  Rocksdb_based,
-  Tag
+/** used to manage influxdb metadata */
+public interface IInfluxDBMetaManager {
+
+  void recover();
+
+  Map<String, Integer> getFieldOrders(String database, String measurement, long sessionId);
+
+  String generatePath(
+      String database,
+      String measurement,
+      Map<String, String> tags,
+      Set<String> fields,
+      long sessionID);
+
+  Map<String, Integer> getTagOrders(String database, String measurement, long sessionID);
 }
