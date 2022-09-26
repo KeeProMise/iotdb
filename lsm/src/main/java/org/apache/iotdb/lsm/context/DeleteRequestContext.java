@@ -1,0 +1,79 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.iotdb.lsm.context;
+
+import org.apache.iotdb.lsm.strategy.PostOrderAccessStrategy;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * represents the context of a deletion request, this class can be extended to implement a custom
+ * context
+ */
+public class DeleteRequestContext extends RequestContext {
+
+  // save the key of each level
+  List<Object> keys;
+
+  // value to delete
+  Object value;
+
+  public DeleteRequestContext() {
+    super();
+    type = RequestType.DELETE;
+    // post-order traversal strategy is used by default
+    accessStrategy = new PostOrderAccessStrategy();
+  }
+
+  public DeleteRequestContext(Object value, Object... ks) {
+    super();
+    this.value = value;
+    keys = new ArrayList<>();
+    keys.addAll(Arrays.asList(ks));
+    type = RequestType.DELETE;
+    // post-order traversal strategy is used by default
+    accessStrategy = new PostOrderAccessStrategy();
+  }
+
+  public void setKeys(List<Object> keys) {
+    this.keys = keys;
+  }
+
+  public void setValue(Object value) {
+    this.value = value;
+  }
+
+  public Object getKey() {
+    return keys.get(level);
+  }
+
+  public List<Object> getKeys() {
+    return keys;
+  }
+
+  public Object getValue() {
+    return value;
+  }
+
+  public int size() {
+    return keys.size();
+  }
+}

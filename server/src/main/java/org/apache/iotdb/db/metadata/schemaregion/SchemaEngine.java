@@ -323,6 +323,12 @@ public class SchemaEngine {
             new RSchemaRegionLoader()
                 .loadRSchemaRegion(storageGroup, schemaRegionId, storageGroupMNode);
         break;
+      case Tag:
+        schemaRegion =
+            new TagSchemaRegionLoader()
+                .loadTagSchemaRegion(
+                    storageGroup, schemaRegionId, storageGroupMNode, seriesNumerLimiter);
+        break;
       default:
         throw new UnsupportedOperationException(
             String.format(
